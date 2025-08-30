@@ -6,4 +6,5 @@ aiohttp
 httpx[http2]
 mistralai
 groq
+anthropic
 aiohttp
