@@ -1,0 +1,9 @@
+streamlit
+google-generativeai
+openai
+python-dotenv
+aiohttp
+httpx[http2]
+mistralai
+groq
+aiohttp
