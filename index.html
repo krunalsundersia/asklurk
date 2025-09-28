@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>6 AI Models Chat - Fixed Layout</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<!-- ---------- FLOATING SIDEBAR TOGGLE ---------- -->
+<button id="floating-toggle-btn" class="creative-float-btn" title="Toggle Sidebar">
+    <i class="fas fa-bars"></i>
+</button>
+
+<!-- ---------- WELCOME SCREEN ---------- -->
+<div id="welcome-screen" class="welcome-screen">
+    <div class="welcome-card">
+        <div class="brand">
+            <h1>6 AI Models</h1>
+            <p class="subtitle">Compare responses from 6 different AI personalities</p>
+        </div>
+        <div class="input-group">
+            <textarea id="first-prompt" placeholder="Ask your first question..." autofocus></textarea>
+            <button id="start-btn" class="star-send-btn">
+                Ask
+                <svg class="star-1" width="25" height="25" viewBox="0 0 25 25">
+                    <path class="fil0" d="M12.5,0L15.3,8.6L24.4,8.6L17.1,13.9L19.9,22.5L12.5,17.2L5.1,22.5L7.9,13.9L0.6,8.6L9.7,8.6L12.5,0Z" />
+                </svg>
+                <svg class="star-2" width="15" height="15" viewBox="0 0 15 15">
+                    <path class="fil0" d="M7.5,0L9.2,5.2L14.6,5.2L10.3,8.3L12,13.5L7.5,10.3L3,13.5L4.7,8.3L0.4,5.2L5.8,5.2L7.5,0Z" />
+                </svg>
+                <svg class="star-3" width="5" height="5" viewBox="0 0 5 5">
+                    <path class="fil0" d="M2.5,0L3.1,1.7L4.9,1.7L3.4,2.8L4,4.5L2.5,3.4L1,4.5L1.6,2.8L0.1,1.7L1.9,1.7L2.5,0Z" />
+                </svg>
+                <svg class="star-4" width="8" height="8" viewBox="0 0 8 8">
+                    <path class="fil0" d="M4,0L4.9,2.8L7.8,2.8L5.5,4.5L6.4,7.3L4,5.5L1.6,7.3L2.5,4.5L0.2,2.8L3.1,2.8L4,0Z" />
+                </svg>
+                <svg class="star-5" width="15" height="15" viewBox="0 0 15 15">
+                    <path class="fil0" d="M7.5,0L9.2,5.2L14.6,5.2L10.3,8.3L12,13.5L7.5,10.3L3,13.5L4.7,8.3L0.4,5.2L5.8,5.2L7.5,0Z" />
+                </svg>
+                <svg class="star-6" width="5" height="5" viewBox="0 0 5 5">
+                    <path class="fil0" d="M2.5,0L3.1,1.7L4.9,1.7L3.4,2.8L4,4.5L2.5,3.4L1,4.5L1.6,2.8L0.1,1.7L1.9,1.7L2.5,0Z" />
+                </svg>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ---------- MAIN CHAT APP ---------- -->
+<div id="chat-app" class="chat-app" style="display:none;">
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2><i class="fas fa-history"></i>&nbsp;&nbsp;&nbsp;History</h2>
+            <div class="search-box">
+                <input type="text" id="history-search" placeholder="Search history..." />
+                <i class="fas fa-search"></i>
+            </div>
+            <div class="sidebar-actions">
+                <button id="new-chat-btn" class="btn-new-chat" title="Start New Chat"><i class="fas fa-plus"></i></button>
+                <div class="token-counter" id="token-counter">0 / 300k</div>
+                <button id="fullscreen-btn" class="btn-fullscreen" title="Toggle Fullscreen"><i class="fas fa-expand"></i></button>
+                <button id="theme-toggle-btn" class="btn-theme-toggle" title="Toggle Dark/Light Theme"><i class="fas fa-moon"></i></button>
+            </div>
+        </div>
+        <div id="history-list" class="history-list"></div>
+    </aside>
+
+    <!-- Main Chat Area -->
+    <main class="main-area" id="main-area">
+        <div class="chat-container" id="chat-container">
+            <!-- Chat messages will appear here -->
+        </div>
+
+        <!-- File Chips Bar -->
+        <div id="file-chips" class="file-chips"></div>
+
+        <!-- Input Bar -->
+        <div class="input-bar">
+            <input type="file" id="file-input" multiple accept="image/*,.pdf,.txt,.doc,.docx" style="display:none;">
+            <button id="attach-btn" class="attach-btn" title="Add file or picture"><i class="fas fa-paperclip"></i></button>
+            <textarea id="prompt-input" placeholder="Type your next thought..." maxlength="1000"></textarea>
+            <button id="ask-btn" class="btn-send"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </main>
+</div>
+
+<script>
+/* ======================  HELPERS  ====================== */
+const $ = id => document.getElementById(id);
+const welcomeScreen      = $('welcome-screen');
+const chatApp            = $('chat-app');
+const firstPrompt        = $('first-prompt');
+const startBtn           = $('start-btn');
+const promptInput        = $('prompt-input');
+const askBtn             = $('ask-btn');
+const chatContainer      = $('chat-container');
+const historyList        = $('history-list');
+const newChatBtn         = $('new-chat-btn');
+const fullscreenBtn      = $('fullscreen-btn');
+const sidebar            = $('sidebar');
+const mainArea           = $('main-area');
+const floatingToggleBtn  = $('floating-toggle-btn');
+const themeToggleBtn     = $('theme-toggle-btn');
+const fileInput          = $('file-input');
+const attachBtn          = $('attach-btn');
+const fileChips          = $('file-chips');
+const tokenCounter       = $('token-counter');
+
+let chatHistory   = [];
+let isSidebarOpen = true;
+let asklurkUsedThisTurn = false;
+let selectedFiles = [];
+let tokensUsed    = 0;
+let isFullscreen  = false;
+
+/* ----------  TOKEN COUNTER  ---------- */
+function formatTokens(n){
+    return n < 1000 ? n : (n/1000).toFixed(1).replace(/\.0$/,'') + 'k';
+}
+
+function updateTokenCounter(){
+    tokenCounter.textContent = `${formatTokens(tokensUsed)} / 300k`;
+    
+    // Update color based on usage
+    const usagePercent = (tokensUsed / 300000) * 100;
+    if (usagePercent > 90) {
+        tokenCounter.style.background = 'rgba(255, 59, 48, 0.2)';
+        tokenCounter.style.color = '#ff3b30';
+    } else if (usagePercent > 70) {
+        tokenCounter.style.background = 'rgba(255, 149, 0, 0.2)';
+        tokenCounter.style.color = '#ff9500';
+    } else {
+        tokenCounter.style.background = 'var(--bg-tertiary)';
+        tokenCounter.style.color = 'var(--text-secondary)';
+    }
+}
+
+function addTokens(count) {
+    tokensUsed += count;
+    updateTokenCounter();
+    localStorage.setItem('tokensUsed', tokensUsed.toString());
+}
+
+/* ----------  FULLSCREEN MODE  ---------- */
+function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => {
+            console.log(`Error attempting to enable fullscreen: ${err.message}`);
+        });
+        fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
+        isFullscreen = true;
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+            fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
+            isFullscreen = false;
+        }
+    }
+}
+
+// Handle fullscreen change events
+document.addEventListener('fullscreenchange', () => {
+    if (!document.fullscreenElement) {
+        fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
+        isFullscreen = false;
+    }
+});
+
+fullscreenBtn.addEventListener('click', toggleFullscreen);
+
+/* ----------  SIDEBAR  ---------- */
+function toggleSidebar(){
+    isSidebarOpen = !isSidebarOpen;
+    sidebar.classList.toggle('sidebar-closed', !isSidebarOpen);
+    mainArea.style.marginLeft = isSidebarOpen ? '240px' : '0';
+    floatingToggleBtn.innerHTML = isSidebarOpen ? '<i class="fas fa-times"></i>' : '<i class="fas fa-bars"></i>';
+}
+floatingToggleBtn.addEventListener('click', toggleSidebar);
+
+/* ----------  THEME  ---------- */
+function loadTheme(){
+    const saved = localStorage.getItem('theme') || 'dark';
+    if (saved === 'light') {
+        document.body.classList.add('light-theme');
+        themeToggleBtn.querySelector('i').className = 'fas fa-sun';
+    }
+}
+function toggleTheme(){
+    const isLight = document.body.classList.toggle('light-theme');
+    const icon = themeToggleBtn.querySelector('i');
+    icon.className = isLight ? 'fas fa-sun' : 'fas fa-moon';
+    localStorage.setItem('theme', isLight ? 'light' : 'dark');
+}
+loadTheme();
+themeToggleBtn.addEventListener('click', toggleTheme);
+
+/* ----------  HISTORY  ---------- */
+function filterHistory(){
+    const q = $('history-search').value.toLowerCase().trim();
+    document.querySelectorAll('.history-item').forEach(item=>{
+        item.style.display = item.title.toLowerCase().includes(q) ? 'flex' : 'none';
+    });
+}
+$('history-search').addEventListener('input', filterHistory);
+
+function addToHistory(prompt){
+    const item = document.createElement('div');
+    item.className = 'history-item';
+    item.innerHTML = `<i class="fas fa-message"></i><span>${escapeHtml(prompt.length>40?prompt.substring(0,40)+'…':prompt)}</span>`;
+    item.title = prompt;
+    item.addEventListener('click', ()=>{ promptInput.value = prompt; promptInput.focus(); });
+    historyList.prepend(item);
+}
+
+/* ----------  MESSAGES  ---------- */
+function appendUserMessage(text){
+    const msg = document.createElement('div');
+    msg.className = 'message user-message';
+    msg.innerHTML = `<div class="avatar">👤</div><div class="bubble">${escapeHtml(text)}</div>`;
+    chatContainer.appendChild(msg);
+}
+
+function escapeHtml(str){
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+}
+
+/* ----------  6-CARD GRID (NO WRAPPER)  ---------- */
+function createResponseGroup(){
+    const group = document.createElement('div');
+    group.className = 'response-group';
+
+    const bots = [
+        {key:'logic',   badge:'GPT-5',      tag:'Logic',    thinking:'LogicBot is analysing…'},
+        {key:'creative',badge:'Grok 4',     tag:'Creative', thinking:'CreativeBot is imagining…'},
+        {key:'technical',badge:'Claude 3',  tag:'Technical',thinking:'TechBot is coding…'},
+        {key:'concise', badge:'Gemini Pro', tag:'Concise',  thinking:'BriefBot is summarizing…'},
+        {key:'friendly',badge:'Llama 3',    tag:'Friendly', thinking:'FriendBot is chatting…'},
+        {key:'expert',  badge:'Mixtral 8x', tag:'Expert',   thinking:'ExpertBot is researching…'}
+    ];
+
+    bots.forEach(b=>{
+        const card = document.createElement('div');
+        card.className = `ai-card ${b.key}-card`;
+        card.innerHTML = `
+            <div class="card-header">
+                <div class="badge ${b.key}-badge">${b.badge} <span class="model-tag">${b.tag}</span></div>
+            </div>
+            <div class="thinking-container ${b.key}-thinking">
+                <div class="thinking-dots"><span></span><span></span><span></span></div>
+                <div class="thinking-text">${b.thinking}</div>
+            </div>
+            <div class="response-display ${b.key}-response"></div>`;
+        group.appendChild(card);
+    });
+    
+    return group;
+}
+
+/* ----------  ASKLURK - FIXED POSITIONING ---------- */
+function showAskLurkButton(responseGroup){
+    if(asklurkUsedThisTurn) return;
+    asklurkUsedThisTurn = true;
+    
+    // Create container for AskLurk button - scoped to this response group
+    const asklurkContainer = document.createElement('div');
+    asklurkContainer.className = 'asklurk-container';
+    asklurkContainer.dataset.questionId = Date.now(); // Unique ID for this question
+    
+    // Create the button row
+    const row = document.createElement('div');
+    row.className = 'asklurk-row';
+    row.innerHTML = `<button id="asklurk-merge-btn" title="AskLurk – merge all 6 answers"><i class="fas fa-star"></i> AskLurk (6 models)</button>`;
+    
+    // Append button to container
+    asklurkContainer.appendChild(row);
+    
+    // Append container after the response group (not after previous AskLurk)
+    responseGroup.parentNode.insertBefore(asklurkContainer, responseGroup.nextSibling);
+    
+    // Bind click event with proper scoping
+    row.querySelector('button').onclick = () => runAskLurkMerge(responseGroup, row.querySelector('button'), asklurkContainer);
+}
+
+async function runAskLurkMerge(responseGroup, btn, asklurkContainer){
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Merging 6 responses…';
+
+    // Collect answers from THIS response group only
+    const answers = {};
+    ['logic','creative','technical','concise','friendly','expert'].forEach(k=>{
+        const responseElement = responseGroup.querySelector(`.${k}-response`);
+        answers[k] = responseElement ? responseElement.textContent || '' : '';
+    });
+
+    // Get the original question text
+    const questionText = getQuestionTextForResponseGroup(responseGroup);
+
+    try{
+        const res = await fetch('/asklurk', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({answers, prompt: questionText})
+        });
+        
+        if (!res.ok) throw new Error('AskLurk request failed');
+        
+        const data = await res.json();
+        
+        if(data.best){
+            // Remove any existing best answer in THIS container
+            const existingBest = asklurkContainer.querySelector('.best-answer-row');
+            if (existingBest) existingBest.remove();
+            
+            const bestCard = document.createElement('div');
+            bestCard.className = 'ai-card asklurk-best';
+            bestCard.innerHTML = `
+                <div class="card-header"><div class="badge" style="color:#ffd700"><i class="fas fa-crown"></i> AskLurk Best Answer (from 6 models)</div></div>
+                <div class="response-display">${escapeHtml(data.best)}</div>`;
+            
+            const bestRow = document.createElement('div');
+            bestRow.className = 'best-answer-row';
+            bestRow.appendChild(bestCard);
+            
+            // Append to THIS AskLurk container
+            asklurkContainer.appendChild(bestRow);
+            
+            smoothScrollToBottom();
+        }
+    }catch(err){
+        console.error('AskLurk error', err);
+        btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Error';
+        setTimeout(()=>{ 
+            btn.innerHTML = '<i class="fas fa-star"></i> AskLurk'; 
+            btn.disabled = false; 
+            asklurkUsedThisTurn = false; 
+        }, 2000);
+    }
+}
+
+// Helper function to find the question text for a response group
+function getQuestionTextForResponseGroup(responseGroup) {
+    // Find the user message before this response group
+    const allMessages = Array.from(document.querySelectorAll('.message, .response-group'));
+    const groupIndex = allMessages.indexOf(responseGroup);
+    
+    if (groupIndex > 0) {
+        const previousElement = allMessages[groupIndex - 1];
+        if (previousElement.classList.contains('user-message')) {
+            const bubble = previousElement.querySelector('.bubble');
+            return bubble ? bubble.textContent : '';
+        }
+    }
+    
+    return promptInput.value || 'Unknown question';
+}
+
+function smoothScrollToBottom() {
+    window.scrollTo({
+        top: document.body.scrollHeight,
+        behavior: 'smooth'
+    });
+}
+
+/* ----------  FILE CHIPS  ---------- */
+function renderFileChips(){
+    fileChips.innerHTML = '';
+    selectedFiles.forEach((file, idx)=>{
+        const chip = document.createElement('div');
+        chip.className = 'file-chip';
+        const isImage = file.type.startsWith('image/');
+        chip.innerHTML = `
+            ${isImage ? `<img src="${URL.createObjectURL(file)}" class="chip-img" alt="">` : '<i class="fas fa-file"></i>'}
+            <span>${file.name}</span>
+            <i class="fas fa-times chip-remove" data-idx="${idx}"></i>`;
+        fileChips.appendChild(chip);
+    });
+    fileChips.querySelectorAll('.chip-remove').forEach(icon=>{
+        icon.onclick = (e)=>{
+            selectedFiles.splice(parseInt(e.currentTarget.dataset.idx), 1);
+            renderFileChips();
+        };
+    });
+}
+
+/* ----------  FILE UPLOAD  ---------- */
+attachBtn.onclick = () => fileInput.click();
+fileInput.onchange = (e)=>{
+    selectedFiles.push(...Array.from(e.target.files));
+    renderFileChips();
+    fileInput.value = '';
+};
+
+/* ----------  STREAMING  ---------- */
+async function streamResponses(prompt, responseGroup){
+    asklurkUsedThisTurn = false;
+
+    const responseDisplays = {};
+    const thinkingContainers = {};
+    ['logic','creative','technical','concise','friendly','expert'].forEach(k=>{
+        responseDisplays[k]   = responseGroup.querySelector(`.${k}-response`);
+        thinkingContainers[k] = responseGroup.querySelector(`.${k}-thinking`);
+        thinkingContainers[k].style.display = 'block';
+    });
+
+    // Simulate streaming responses with token tracking
+    const responses = {
+        logic: "Based on logical analysis, the most efficient approach would be to systematically evaluate all available options before making a decision.",
+        creative: "Imagine if we approached this from a completely different angle! What if we combined these elements in unexpected ways?",
+        technical: "The technical implementation requires careful consideration of the underlying architecture. We need to ensure proper error handling and data validation.",
+        concise: "Keep it simple. Focus on the core objective and eliminate unnecessary complexity.",
+        friendly: "Hey there! I think we can work through this together. Let me break it down into easy-to-follow steps.",
+        expert: "Based on my extensive research in this domain, the evidence suggests that a multi-faceted approach yields the best results."
+    };
+
+    // Calculate base tokens for the prompt
+    const promptTokens = Math.floor(prompt.length / 4);
+    addTokens(promptTokens);
+
+    // Simulate streaming with delays and token tracking
+    for (const [bot, response] of Object.entries(responses)) {
+        setTimeout(() => {
+            thinkingContainers[bot].style.display = 'none';
+            
+            // Simulate token usage for this response
+            const responseTokens = Math.floor(response.length / 4);
+            addTokens(responseTokens);
+            
+            // Type out response character by character
+            let index = 0;
+            const typeResponse = () => {
+                if (index < response.length) {
+                    responseDisplays[bot].textContent = response.substring(0, index + 1);
+                    index++;
+                    setTimeout(typeResponse, 10);
+                }
+            };
+            typeResponse();
+            
+            smoothScrollToBottom();
+            
+            // Show AskLurk button after all responses are loaded
+            if (bot === 'expert') {
+                setTimeout(() => {
+                    if (!asklurkUsedThisTurn) showAskLurkButton(responseGroup);
+                }, 500);
+            }
+        }, Math.random() * 2000 + 500);
+    }
+}
+
+/* ----------  CHAT FLOW  ---------- */
+async function startChat(prompt){
+    if (!prompt?.trim() && !selectedFiles.length) return;
+    welcomeScreen.style.opacity = '0';
+    setTimeout(()=>{
+        welcomeScreen.style.display = 'none';
+        chatApp.style.display = 'flex';
+        setTimeout(()=>chatApp.style.opacity='1', 50);
+    }, 300);
+    addToHistory(prompt);
+    appendUserMessage(prompt + (selectedFiles.length ? ` (+${selectedFiles.length} file${selectedFiles.length>1?'s':''})` : ''));
+    const group = createResponseGroup();
+    chatContainer.appendChild(group);
+    window.scrollTo({top: group.offsetTop - 100, behavior:'smooth'});
+    firstPrompt.value = '';
+    promptInput.focus();
+    await streamResponses(prompt, group);
+}
+
+async function handleAsk(prompt){
+    if (!prompt?.trim() && !selectedFiles.length) return;
+    addToHistory(prompt);
+    appendUserMessage(prompt + (selectedFiles.length ? ` (+${selectedFiles.length} file${selectedFiles.length>1?'s':''})` : ''));
+    
+    // Reset AskLurk flag for this new question
+    asklurkUsedThisTurn = false;
+    
+    const group = createResponseGroup();
+    chatContainer.appendChild(group);
+    window.scrollTo({top: group.offsetTop - 100, behavior:'smooth'});
+    promptInput.value = '';
+    await streamResponses(prompt, group);
+}
+
+function startNewChat(){
+    chatContainer.innerHTML = '';
+    selectedFiles = []; 
+    renderFileChips();
+    window.scrollTo(0,0);
+    promptInput.focus();
+    $('history-search').value = '';
+    filterHistory();
+    asklurkUsedThisTurn = false;
+}
+
+/* ----------  BINDINGS  ---------- */
+startBtn.addEventListener('click', ()=>startChat(firstPrompt.value));
+firstPrompt.addEventListener('keydown', e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); startChat(firstPrompt.value); }});
+askBtn.addEventListener('click', ()=>handleAsk(promptInput.value));
+promptInput.addEventListener('keydown', e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); handleAsk(promptInput.value); }});
+newChatBtn.addEventListener('click', startNewChat);
+
+/* ----------  INIT  ---------- */
+document.addEventListener('DOMContentLoaded', () => {
+    // Load saved token count
+    const savedTokens = localStorage.getItem('tokensUsed');
+    if (savedTokens) {
+        tokensUsed = parseInt(savedTokens);
+    }
+    updateTokenCounter();
+});
+</script>
+
+</body>
+</html>
