@@ -1,10 +1,6 @@
-streamlit
-google-generativeai
-openai
+flask
+flask-cors
 python-dotenv
-aiohttp
-httpx[http2]
-mistralai
-groq
-anthropic
-aiohttp
+openai
+tiktoken
+
