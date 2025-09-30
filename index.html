@@ -3,520 +3,556 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>6 AI Models Chat - Fixed Layout</title>
+    <title>Tripod</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-   <link rel="stylesheet" href="style.css">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
 </head>
 <body>
 
-<!-- ---------- FLOATING SIDEBAR TOGGLE ---------- -->
-<button id="floating-toggle-btn" class="creative-float-btn" title="Toggle Sidebar">
-    <i class="fas fa-bars"></i>
-</button>
+<!-- LOGIN/SIGNUP MODAL -->
+<div id="auth-modal" class="auth-modal" style="display: flex;">
+    <div class="auth-container">
+        <div class="auth-tabs">
+            <button class="auth-tab active" data-tab="login">Login</button>
+            <button class="auth-tab" data-tab="signup">Sign Up</button>
+        </div>
 
-<!-- ---------- WELCOME SCREEN ---------- -->
+        <!-- LOGIN FORM -->
+        <div id="login-form" class="auth-form active">
+            <h2>Welcome Back</h2>
+            <p class="auth-subtitle">Sign in to your account</p>
+            
+            <button class="google-auth-btn" id="google-login-btn">
+                <i class="fab fa-google"></i>
+                Continue with Google
+            </button>
+            
+            <div class="divider">
+                <span>or</span>
+            </div>
+
+            <form id="login-email-form">
+                <div class="form-group">
+                    <input type="email" id="login-email" placeholder="Email address" required>
+                    <i class="fas fa-envelope"></i>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="login-password" placeholder="Password" required>
+                    <i class="fas fa-lock"></i>
+                </div>
+                <button type="submit" class="auth-submit-btn">Sign In</button>
+            </form>
+
+            <div class="auth-links">
+                <a href="#" id="forgot-password">Forgot password?</a>
+            </div>
+        </div>
+
+        <!-- SIGNUP FORM -->
+        <div id="signup-form" class="auth-form">
+            <h2>Create Account</h2>
+            <p class="auth-subtitle">Join Tripod today</p>
+            
+            <button class="google-auth-btn" id="google-signup-btn">
+                <i class="fab fa-google"></i>
+                Continue with Google
+            </button>
+            
+            <div class="divider">
+                <span>or</span>
+            </div>
+
+            <form id="signup-email-form">
+                <div class="form-group">
+                    <input type="text" id="signup-name" placeholder="Full name" required>
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="form-group">
+                    <input type="email" id="signup-email" placeholder="Email address" required>
+                    <i class="fas fa-envelope"></i>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="signup-password" placeholder="Password" required>
+                    <i class="fas fa-lock"></i>
+                </div>
+                <button type="submit" class="auth-submit-btn">Send Verification Code</button>
+            </form>
+        </div>
+
+        <!-- OTP VERIFICATION FORM -->
+        <div id="otp-form" class="auth-form">
+            <h2>Verify Your Email</h2>
+            <p class="auth-subtitle">We sent a 6-digit code to <span id="otp-email"></span></p>
+            
+            <form id="otp-verification-form">
+                <div class="otp-container">
+                    <input type="text" class="otp-input" maxlength="1" required>
+                    <input type="text" class="otp-input" maxlength="1" required>
+                    <input type="text" class="otp-input" maxlength="1" required>
+                    <input type="text" class="otp-input" maxlength="1" required>
+                    <input type="text" class="otp-input" maxlength="1" required>
+                    <input type="text" class="otp-input" maxlength="1" required>
+                </div>
+                <div class="otp-timer">
+                    <span id="otp-timer">02:00</span>
+                </div>
+                <button type="submit" class="auth-submit-btn">Verify & Create Account</button>
+            </form>
+
+            <div class="auth-links">
+                <a href="#" id="resend-otp">Resend Code</a>
+                <a href="#" id="change-email">Change Email</a>
+            </div>
+        </div>
+
+        <!-- FORGOT PASSWORD FORM -->
+        <div id="forgot-password-form" class="auth-form">
+            <h2>Reset Password</h2>
+            <p class="auth-subtitle">Enter your email to reset your password</p>
+            
+            <form id="forgot-password-email-form">
+                <div class="form-group">
+                    <input type="email" id="forgot-password-email" placeholder="Email address" required>
+                    <i class="fas fa-envelope"></i>
+                </div>
+                <button type="submit" class="auth-submit-btn">Send Reset Link</button>
+            </form>
+
+            <div class="auth-links">
+                <a href="#" id="back-to-login">Back to Login</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- WELCOME SCREEN -->
 <div id="welcome-screen" class="welcome-screen">
     <div class="welcome-card">
         <div class="brand">
-            <h1>6 AI Models</h1>
-            <p class="subtitle">Compare responses from 6 different AI personalities</p>
+            <h1>Tripod</h1>
+            <p class="subtitle">Your single chat, their combined brilliance</p>
         </div>
         <div class="input-group">
-            <textarea id="first-prompt" placeholder="Ask your first question..." autofocus></textarea>
-            <button id="start-btn" class="star-send-btn">
-                Ask
-                <svg class="star-1" width="25" height="25" viewBox="0 0 25 25">
-                    <path class="fil0" d="M12.5,0L15.3,8.6L24.4,8.6L17.1,13.9L19.9,22.5L12.5,17.2L5.1,22.5L7.9,13.9L0.6,8.6L9.7,8.6L12.5,0Z" />
-                </svg>
-                <svg class="star-2" width="15" height="15" viewBox="0 0 15 15">
-                    <path class="fil0" d="M7.5,0L9.2,5.2L14.6,5.2L10.3,8.3L12,13.5L7.5,10.3L3,13.5L4.7,8.3L0.4,5.2L5.8,5.2L7.5,0Z" />
-                </svg>
-                <svg class="star-3" width="5" height="5" viewBox="0 0 5 5">
-                    <path class="fil0" d="M2.5,0L3.1,1.7L4.9,1.7L3.4,2.8L4,4.5L2.5,3.4L1,4.5L1.6,2.8L0.1,1.7L1.9,1.7L2.5,0Z" />
-                </svg>
-                <svg class="star-4" width="8" height="8" viewBox="0 0 8 8">
-                    <path class="fil0" d="M4,0L4.9,2.8L7.8,2.8L5.5,4.5L6.4,7.3L4,5.5L1.6,7.3L2.5,4.5L0.2,2.8L3.1,2.8L4,0Z" />
-                </svg>
-                <svg class="star-5" width="15" height="15" viewBox="0 0 15 15">
-                    <path class="fil0" d="M7.5,0L9.2,5.2L14.6,5.2L10.3,8.3L12,13.5L7.5,10.3L3,13.5L4.7,8.3L0.4,5.2L5.8,5.2L7.5,0Z" />
-                </svg>
-                <svg class="star-6" width="5" height="5" viewBox="0 0 5 5">
-                    <path class="fil0" d="M2.5,0L3.1,1.7L4.9,1.7L3.4,2.8L4,4.5L2.5,3.4L1,4.5L1.6,2.8L0.1,1.7L1.9,1.7L2.5,0Z" />
-                </svg>
+            <textarea id="first-prompt" placeholder="Ask your first question..."></textarea>
+            <button id="start-btn" class="send-btn">Ask</button>
+        </div>
+        <div class="user-menu">
+            <button id="logout-btn" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i> Logout
             </button>
         </div>
     </div>
 </div>
 
-<!-- ---------- MAIN CHAT APP ---------- -->
-<div id="chat-app" class="chat-app" style="display:none;">
-
-    <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <h2><i class="fas fa-history"></i>&nbsp;&nbsp;&nbsp;History</h2>
-            <div class="search-box">
-                <input type="text" id="history-search" placeholder="Search history..." />
-                <i class="fas fa-search"></i>
-            </div>
-            <div class="sidebar-actions">
-                <button id="new-chat-btn" class="btn-new-chat" title="Start New Chat"><i class="fas fa-plus"></i></button>
-                <div class="token-counter" id="token-counter">0 / 300k</div>
-                <button id="fullscreen-btn" class="btn-fullscreen" title="Toggle Fullscreen"><i class="fas fa-expand"></i></button>
-                <button id="theme-toggle-btn" class="btn-theme-toggle" title="Toggle Dark/Light Theme"><i class="fas fa-moon"></i></button>
+<!-- MAIN CHAT APP -->
+<div id="chat-app" class="chat-app">
+    <div class="chat-container">
+        <div class="chat-header">
+            <h2>Tripod</h2>
+            <div class="user-info">
+                <span id="user-greeting">Welcome!</span>
             </div>
         </div>
-        <div id="history-list" class="history-list"></div>
-    </aside>
-
-    <!-- Main Chat Area -->
-    <main class="main-area" id="main-area">
-        <div class="chat-container" id="chat-container">
-            <!-- Chat messages will appear here -->
-        </div>
-
-        <!-- File Chips Bar -->
-        <div id="file-chips" class="file-chips"></div>
-
-        <!-- Input Bar -->
+        <div id="chat-messages" class="chat-messages"></div>
         <div class="input-bar">
-            <input type="file" id="file-input" multiple accept="image/*,.pdf,.txt,.doc,.docx" style="display:none;">
-            <button id="attach-btn" class="attach-btn" title="Add file or picture"><i class="fas fa-paperclip"></i></button>
-            <textarea id="prompt-input" placeholder="Type your next thought..." maxlength="1000"></textarea>
+            <textarea id="prompt-input" placeholder="Type your message..."></textarea>
             <button id="ask-btn" class="btn-send"><i class="fas fa-paper-plane"></i></button>
         </div>
-    </main>
+    </div>
 </div>
 
 <script>
-/* ======================  HELPERS  ====================== */
-const $ = id => document.getElementById(id);
-const welcomeScreen      = $('welcome-screen');
-const chatApp            = $('chat-app');
-const firstPrompt        = $('first-prompt');
-const startBtn           = $('start-btn');
-const promptInput        = $('prompt-input');
-const askBtn             = $('ask-btn');
-const chatContainer      = $('chat-container');
-const historyList        = $('history-list');
-const newChatBtn         = $('new-chat-btn');
-const fullscreenBtn      = $('fullscreen-btn');
-const sidebar            = $('sidebar');
-const mainArea           = $('main-area');
-const floatingToggleBtn  = $('floating-toggle-btn');
-const themeToggleBtn     = $('theme-toggle-btn');
-const fileInput          = $('file-input');
-const attachBtn          = $('attach-btn');
-const fileChips          = $('file-chips');
-const tokenCounter       = $('token-counter');
-
-let chatHistory   = [];
-let isSidebarOpen = true;
-let asklurkUsedThisTurn = false;
-let selectedFiles = [];
-let tokensUsed    = 0;
-let isFullscreen  = false;
-
-/* ----------  TOKEN COUNTER  ---------- */
-function formatTokens(n){
-    return n < 1000 ? n : (n/1000).toFixed(1).replace(/\.0$/,'') + 'k';
-}
-
-function updateTokenCounter(){
-    tokenCounter.textContent = `${formatTokens(tokensUsed)} / 300k`;
-    
-    // Update color based on usage
-    const usagePercent = (tokensUsed / 300000) * 100;
-    if (usagePercent > 90) {
-        tokenCounter.style.background = 'rgba(255, 59, 48, 0.2)';
-        tokenCounter.style.color = '#ff3b30';
-    } else if (usagePercent > 70) {
-        tokenCounter.style.background = 'rgba(255, 149, 0, 0.2)';
-        tokenCounter.style.color = '#ff9500';
-    } else {
-        tokenCounter.style.background = 'var(--bg-tertiary)';
-        tokenCounter.style.color = 'var(--text-secondary)';
-    }
-}
-
-function addTokens(count) {
-    tokensUsed += count;
-    updateTokenCounter();
-    localStorage.setItem('tokensUsed', tokensUsed.toString());
-}
-
-/* ----------  FULLSCREEN MODE  ---------- */
-function toggleFullscreen() {
-    if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(err => {
-            console.log(`Error attempting to enable fullscreen: ${err.message}`);
-        });
-        fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
-        isFullscreen = true;
-    } else {
-        if (document.exitFullscreen) {
-            document.exitFullscreen();
-            fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
-            isFullscreen = false;
-        }
-    }
-}
-
-// Handle fullscreen change events
-document.addEventListener('fullscreenchange', () => {
-    if (!document.fullscreenElement) {
-        fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
-        isFullscreen = false;
-    }
-});
-
-fullscreenBtn.addEventListener('click', toggleFullscreen);
-
-/* ----------  SIDEBAR  ---------- */
-function toggleSidebar(){
-    isSidebarOpen = !isSidebarOpen;
-    sidebar.classList.toggle('sidebar-closed', !isSidebarOpen);
-    mainArea.style.marginLeft = isSidebarOpen ? '240px' : '0';
-    floatingToggleBtn.innerHTML = isSidebarOpen ? '<i class="fas fa-times"></i>' : '<i class="fas fa-bars"></i>';
-}
-floatingToggleBtn.addEventListener('click', toggleSidebar);
-
-/* ----------  THEME  ---------- */
-function loadTheme(){
-    const saved = localStorage.getItem('theme') || 'dark';
-    if (saved === 'light') {
-        document.body.classList.add('light-theme');
-        themeToggleBtn.querySelector('i').className = 'fas fa-sun';
-    }
-}
-function toggleTheme(){
-    const isLight = document.body.classList.toggle('light-theme');
-    const icon = themeToggleBtn.querySelector('i');
-    icon.className = isLight ? 'fas fa-sun' : 'fas fa-moon';
-    localStorage.setItem('theme', isLight ? 'light' : 'dark');
-}
-loadTheme();
-themeToggleBtn.addEventListener('click', toggleTheme);
-
-/* ----------  HISTORY  ---------- */
-function filterHistory(){
-    const q = $('history-search').value.toLowerCase().trim();
-    document.querySelectorAll('.history-item').forEach(item=>{
-        item.style.display = item.title.toLowerCase().includes(q) ? 'flex' : 'none';
-    });
-}
-$('history-search').addEventListener('input', filterHistory);
-
-function addToHistory(prompt){
-    const item = document.createElement('div');
-    item.className = 'history-item';
-    item.innerHTML = `<i class="fas fa-message"></i><span>${escapeHtml(prompt.length>40?prompt.substring(0,40)+'…':prompt)}</span>`;
-    item.title = prompt;
-    item.addEventListener('click', ()=>{ promptInput.value = prompt; promptInput.focus(); });
-    historyList.prepend(item);
-}
-
-/* ----------  MESSAGES  ---------- */
-function appendUserMessage(text){
-    const msg = document.createElement('div');
-    msg.className = 'message user-message';
-    msg.innerHTML = `<div class="avatar">👤</div><div class="bubble">${escapeHtml(text)}</div>`;
-    chatContainer.appendChild(msg);
-}
-
-function escapeHtml(str){
-    const d = document.createElement('div');
-    d.textContent = str;
-    return d.innerHTML;
-}
-
-/* ----------  6-CARD GRID (NO WRAPPER)  ---------- */
-function createResponseGroup(){
-    const group = document.createElement('div');
-    group.className = 'response-group';
-
-    const bots = [
-        {key:'logic',   badge:'GPT-5',      tag:'Logic',    thinking:'LogicBot is analysing…'},
-        {key:'creative',badge:'Grok 4',     tag:'Creative', thinking:'CreativeBot is imagining…'},
-        {key:'technical',badge:'Claude 3',  tag:'Technical',thinking:'TechBot is coding…'},
-        {key:'concise', badge:'Gemini Pro', tag:'Concise',  thinking:'BriefBot is summarizing…'},
-        {key:'friendly',badge:'Llama 3',    tag:'Friendly', thinking:'FriendBot is chatting…'},
-        {key:'expert',  badge:'Mixtral 8x', tag:'Expert',   thinking:'ExpertBot is researching…'}
-    ];
-
-    bots.forEach(b=>{
-        const card = document.createElement('div');
-        card.className = `ai-card ${b.key}-card`;
-        card.innerHTML = `
-            <div class="card-header">
-                <div class="badge ${b.key}-badge">${b.badge} <span class="model-tag">${b.tag}</span></div>
-            </div>
-            <div class="thinking-container ${b.key}-thinking">
-                <div class="thinking-dots"><span></span><span></span><span></span></div>
-                <div class="thinking-text">${b.thinking}</div>
-            </div>
-            <div class="response-display ${b.key}-response"></div>`;
-        group.appendChild(card);
-    });
-    
-    return group;
-}
-
-/* ----------  ASKLURK - FIXED POSITIONING ---------- */
-function showAskLurkButton(responseGroup){
-    if(asklurkUsedThisTurn) return;
-    asklurkUsedThisTurn = true;
-    
-    // Create container for AskLurk button - scoped to this response group
-    const asklurkContainer = document.createElement('div');
-    asklurkContainer.className = 'asklurk-container';
-    asklurkContainer.dataset.questionId = Date.now(); // Unique ID for this question
-    
-    // Create the button row
-    const row = document.createElement('div');
-    row.className = 'asklurk-row';
-    row.innerHTML = `<button id="asklurk-merge-btn" title="AskLurk – merge all 6 answers"><i class="fas fa-star"></i> AskLurk (6 models)</button>`;
-    
-    // Append button to container
-    asklurkContainer.appendChild(row);
-    
-    // Append container after the response group (not after previous AskLurk)
-    responseGroup.parentNode.insertBefore(asklurkContainer, responseGroup.nextSibling);
-    
-    // Bind click event with proper scoping
-    row.querySelector('button').onclick = () => runAskLurkMerge(responseGroup, row.querySelector('button'), asklurkContainer);
-}
-
-async function runAskLurkMerge(responseGroup, btn, asklurkContainer){
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Merging 6 responses…';
-
-    // Collect answers from THIS response group only
-    const answers = {};
-    ['logic','creative','technical','concise','friendly','expert'].forEach(k=>{
-        const responseElement = responseGroup.querySelector(`.${k}-response`);
-        answers[k] = responseElement ? responseElement.textContent || '' : '';
-    });
-
-    // Get the original question text
-    const questionText = getQuestionTextForResponseGroup(responseGroup);
-
-    try{
-        const res = await fetch('/asklurk', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({answers, prompt: questionText})
-        });
-        
-        if (!res.ok) throw new Error('AskLurk request failed');
-        
-        const data = await res.json();
-        
-        if(data.best){
-            // Remove any existing best answer in THIS container
-            const existingBest = asklurkContainer.querySelector('.best-answer-row');
-            if (existingBest) existingBest.remove();
-            
-            const bestCard = document.createElement('div');
-            bestCard.className = 'ai-card asklurk-best';
-            bestCard.innerHTML = `
-                <div class="card-header"><div class="badge" style="color:#ffd700"><i class="fas fa-crown"></i> AskLurk Best Answer (from 6 models)</div></div>
-                <div class="response-display">${escapeHtml(data.best)}</div>`;
-            
-            const bestRow = document.createElement('div');
-            bestRow.className = 'best-answer-row';
-            bestRow.appendChild(bestCard);
-            
-            // Append to THIS AskLurk container
-            asklurkContainer.appendChild(bestRow);
-            
-            smoothScrollToBottom();
-        }
-    }catch(err){
-        console.error('AskLurk error', err);
-        btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Error';
-        setTimeout(()=>{ 
-            btn.innerHTML = '<i class="fas fa-star"></i> AskLurk'; 
-            btn.disabled = false; 
-            asklurkUsedThisTurn = false; 
-        }, 2000);
-    }
-}
-
-// Helper function to find the question text for a response group
-function getQuestionTextForResponseGroup(responseGroup) {
-    // Find the user message before this response group
-    const allMessages = Array.from(document.querySelectorAll('.message, .response-group'));
-    const groupIndex = allMessages.indexOf(responseGroup);
-    
-    if (groupIndex > 0) {
-        const previousElement = allMessages[groupIndex - 1];
-        if (previousElement.classList.contains('user-message')) {
-            const bubble = previousElement.querySelector('.bubble');
-            return bubble ? bubble.textContent : '';
-        }
-    }
-    
-    return promptInput.value || 'Unknown question';
-}
-
-function smoothScrollToBottom() {
-    window.scrollTo({
-        top: document.body.scrollHeight,
-        behavior: 'smooth'
-    });
-}
-
-/* ----------  FILE CHIPS  ---------- */
-function renderFileChips(){
-    fileChips.innerHTML = '';
-    selectedFiles.forEach((file, idx)=>{
-        const chip = document.createElement('div');
-        chip.className = 'file-chip';
-        const isImage = file.type.startsWith('image/');
-        chip.innerHTML = `
-            ${isImage ? `<img src="${URL.createObjectURL(file)}" class="chip-img" alt="">` : '<i class="fas fa-file"></i>'}
-            <span>${file.name}</span>
-            <i class="fas fa-times chip-remove" data-idx="${idx}"></i>`;
-        fileChips.appendChild(chip);
-    });
-    fileChips.querySelectorAll('.chip-remove').forEach(icon=>{
-        icon.onclick = (e)=>{
-            selectedFiles.splice(parseInt(e.currentTarget.dataset.idx), 1);
-            renderFileChips();
-        };
-    });
-}
-
-/* ----------  FILE UPLOAD  ---------- */
-attachBtn.onclick = () => fileInput.click();
-fileInput.onchange = (e)=>{
-    selectedFiles.push(...Array.from(e.target.files));
-    renderFileChips();
-    fileInput.value = '';
+// Firebase Configuration - REPLACE WITH YOUR ACTUAL CONFIG
+const firebaseConfig = {
+  apiKey: "AIzaSyAd8fmdmJM7qAbtuD5gAidIdQ7TX_jbTe0",
+  authDomain: "tripod-d7c4a.firebaseapp.com",
+  projectId: "tripod-d7c4a",
+  storageBucket: "tripod-d7c4a.firebasestorage.app",
+  messagingSenderId: "800673305001",
+  appId: "1:800673305001:web:f0597d78917b0cc04974b8",
+  measurementId: "G-ZP5QQFC43Y"
 };
 
-/* ----------  STREAMING  ---------- */
-async function streamResponses(prompt, responseGroup){
-    asklurkUsedThisTurn = false;
+// Initialize Firebase
+const app = firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
 
-    const responseDisplays = {};
-    const thinkingContainers = {};
-    ['logic','creative','technical','concise','friendly','expert'].forEach(k=>{
-        responseDisplays[k]   = responseGroup.querySelector(`.${k}-response`);
-        thinkingContainers[k] = responseGroup.querySelector(`.${k}-thinking`);
-        thinkingContainers[k].style.display = 'block';
-    });
+// Authentication state
+let currentUser = null;
+let otpTimer = null;
+let otpTimeLeft = 120;
+let pendingSignup = null;
 
-    // Simulate streaming responses with token tracking
-    const responses = {
-        logic: "Based on logical analysis, the most efficient approach would be to systematically evaluate all available options before making a decision.",
-        creative: "Imagine if we approached this from a completely different angle! What if we combined these elements in unexpected ways?",
-        technical: "The technical implementation requires careful consideration of the underlying architecture. We need to ensure proper error handling and data validation.",
-        concise: "Keep it simple. Focus on the core objective and eliminate unnecessary complexity.",
-        friendly: "Hey there! I think we can work through this together. Let me break it down into easy-to-follow steps.",
-        expert: "Based on my extensive research in this domain, the evidence suggests that a multi-faceted approach yields the best results."
-    };
+// DOM Elements
+const authModal = document.getElementById('auth-modal');
+const welcomeScreen = document.getElementById('welcome-screen');
+const chatApp = document.getElementById('chat-app');
 
-    // Calculate base tokens for the prompt
-    const promptTokens = Math.floor(prompt.length / 4);
-    addTokens(promptTokens);
+/* ---------- AUTHENTICATION FUNCTIONS ---------- */
+function showAuthForm(formId) {
+    document.querySelectorAll('.auth-form').forEach(form => form.classList.remove('active'));
+    document.getElementById(formId).classList.add('active');
+}
 
-    // Simulate streaming with delays and token tracking
-    for (const [bot, response] of Object.entries(responses)) {
-        setTimeout(() => {
-            thinkingContainers[bot].style.display = 'none';
-            
-            // Simulate token usage for this response
-            const responseTokens = Math.floor(response.length / 4);
-            addTokens(responseTokens);
-            
-            // Type out response character by character
-            let index = 0;
-            const typeResponse = () => {
-                if (index < response.length) {
-                    responseDisplays[bot].textContent = response.substring(0, index + 1);
-                    index++;
-                    setTimeout(typeResponse, 10);
-                }
-            };
-            typeResponse();
-            
-            smoothScrollToBottom();
-            
-            // Show AskLurk button after all responses are loaded
-            if (bot === 'expert') {
-                setTimeout(() => {
-                    if (!asklurkUsedThisTurn) showAskLurkButton(responseGroup);
-                }, 500);
+function startOTPTimer() {
+    otpTimeLeft = 120;
+    updateOTPTimer();
+    
+    otpTimer = setInterval(() => {
+        otpTimeLeft--;
+        updateOTPTimer();
+        
+        if (otpTimeLeft <= 0) {
+            clearInterval(otpTimer);
+        }
+    }, 1000);
+}
+
+function updateOTPTimer() {
+    const minutes = Math.floor(otpTimeLeft / 60);
+    const seconds = otpTimeLeft % 60;
+    document.getElementById('otp-timer').textContent = 
+        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
+
+function setupOTPInputs() {
+    const otpInputs = document.querySelectorAll('.otp-input');
+    
+    otpInputs.forEach((input, index) => {
+        input.addEventListener('input', (e) => {
+            if (e.target.value.length === 1 && index < otpInputs.length - 1) {
+                otpInputs[index + 1].focus();
             }
-        }, Math.random() * 2000 + 500);
-    }
+        });
+        
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Backspace' && !e.target.value && index > 0) {
+                otpInputs[index - 1].focus();
+            }
+        });
+    });
 }
 
-/* ----------  CHAT FLOW  ---------- */
-async function startChat(prompt){
-    if (!prompt?.trim() && !selectedFiles.length) return;
-    welcomeScreen.style.opacity = '0';
-    setTimeout(()=>{
-        welcomeScreen.style.display = 'none';
-        chatApp.style.display = 'flex';
-        setTimeout(()=>chatApp.style.opacity='1', 50);
-    }, 300);
-    addToHistory(prompt);
-    appendUserMessage(prompt + (selectedFiles.length ? ` (+${selectedFiles.length} file${selectedFiles.length>1?'s':''})` : ''));
-    const group = createResponseGroup();
-    chatContainer.appendChild(group);
-    window.scrollTo({top: group.offsetTop - 100, behavior:'smooth'});
-    firstPrompt.value = '';
-    promptInput.focus();
-    await streamResponses(prompt, group);
-}
-
-async function handleAsk(prompt){
-    if (!prompt?.trim() && !selectedFiles.length) return;
-    addToHistory(prompt);
-    appendUserMessage(prompt + (selectedFiles.length ? ` (+${selectedFiles.length} file${selectedFiles.length>1?'s':''})` : ''));
+function showScreen(screen) {
+    authModal.style.display = 'none';
+    welcomeScreen.style.display = 'none';
+    chatApp.style.display = 'none';
     
-    // Reset AskLurk flag for this new question
-    asklurkUsedThisTurn = false;
+    if (screen === 'auth') authModal.style.display = 'flex';
+    if (screen === 'welcome') welcomeScreen.style.display = 'flex';
+    if (screen === 'chat') chatApp.style.display = 'flex';
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation-triangle' : 'info'}"></i>
+        <span>${message}</span>
+    `;
     
-    const group = createResponseGroup();
-    chatContainer.appendChild(group);
-    window.scrollTo({top: group.offsetTop - 100, behavior:'smooth'});
-    promptInput.value = '';
-    await streamResponses(prompt, group);
+    document.body.appendChild(notification);
+    
+    setTimeout(() => notification.classList.add('show'), 100);
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
 }
 
-function startNewChat(){
-    chatContainer.innerHTML = '';
-    selectedFiles = []; 
-    renderFileChips();
-    window.scrollTo(0,0);
-    promptInput.focus();
-    $('history-search').value = '';
-    filterHistory();
-    asklurkUsedThisTurn = false;
-}
-
-/* ----------  BINDINGS  ---------- */
-startBtn.addEventListener('click', ()=>startChat(firstPrompt.value));
-firstPrompt.addEventListener('keydown', e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); startChat(firstPrompt.value); }});
-askBtn.addEventListener('click', ()=>handleAsk(promptInput.value));
-promptInput.addEventListener('keydown', e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); handleAsk(promptInput.value); }});
-newChatBtn.addEventListener('click', startNewChat);
-
-/* ----------  INIT  ---------- */
-document.addEventListener('DOMContentLoaded', () => {
-    // Load saved token count
-    const savedTokens = localStorage.getItem('tokensUsed');
-    if (savedTokens) {
-        tokensUsed = parseInt(savedTokens);
+/* ---------- FIREBASE AUTHENTICATION ---------- */
+// Email/Password Login
+document.getElementById('login-email-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    
+    try {
+        const userCredential = await auth.signInWithEmailAndPassword(email, password);
+        handleLogin(userCredential.user);
+    } catch (error) {
+        showNotification(getAuthErrorMessage(error), 'error');
     }
-    updateTokenCounter();
 });
+
+// Email/Password Signup - Send OTP
+document.getElementById('signup-email-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('signup-name').value;
+    const email = document.getElementById('signup-email').value;
+    const password = document.getElementById('signup-password').value;
+    
+    try {
+        // Store pending signup data
+        pendingSignup = { name, email, password };
+        
+        // Send OTP to email
+        const response = await fetch('/api/auth/send-otp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            document.getElementById('otp-email').textContent = email;
+            showAuthForm('otp-form');
+            startOTPTimer();
+            showNotification('Verification code sent to your email', 'success');
+            // Log OTP for development
+            if (data.debug_otp) {
+                console.log('OTP:', data.debug_otp);
+            }
+        } else {
+            showNotification(data.error || 'Failed to send OTP', 'error');
+        }
+    } catch (error) {
+        showNotification('Network error. Please try again.', 'error');
+    }
+});
+
+// OTP Verification
+document.getElementById('otp-verification-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const otpInputs = document.querySelectorAll('.otp-input');
+    const otp = Array.from(otpInputs).map(input => input.value).join('');
+    
+    if (otp.length !== 6) {
+        showNotification('Please enter 6-digit code', 'error');
+        return;
+    }
+    
+    if (!pendingSignup) {
+        showNotification('Signup session expired', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/auth/verify-otp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email: pendingSignup.email,
+                otp: otp,
+                name: pendingSignup.name,
+                password: pendingSignup.password
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            clearInterval(otpTimer);
+            showNotification('Account created successfully!', 'success');
+            
+            // Sign in the user
+            const userCredential = await auth.signInWithEmailAndPassword(
+                pendingSignup.email, 
+                pendingSignup.password
+            );
+            handleLogin(userCredential.user);
+            
+        } else {
+            showNotification(data.error || 'Invalid verification code', 'error');
+        }
+    } catch (error) {
+        showNotification('Network error. Please try again.', 'error');
+    }
+});
+
+// Google Authentication
+document.getElementById('google-login-btn').addEventListener('click', handleGoogleAuth);
+document.getElementById('google-signup-btn').addEventListener('click', handleGoogleAuth);
+
+function handleGoogleAuth() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    
+    auth.signInWithPopup(provider)
+        .then((result) => {
+            handleLogin(result.user);
+        })
+        .catch((error) => {
+            showNotification(getAuthErrorMessage(error), 'error');
+        });
+}
+
+// Forgot Password
+document.getElementById('forgot-password').addEventListener('click', (e) => {
+    e.preventDefault();
+    showAuthForm('forgot-password-form');
+});
+
+document.getElementById('back-to-login').addEventListener('click', (e) => {
+    e.preventDefault();
+    showAuthForm('login-form');
+});
+
+document.getElementById('forgot-password-email-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('forgot-password-email').value;
+    
+    try {
+        await auth.sendPasswordResetEmail(email);
+        showNotification('Password reset link sent to your email', 'success');
+        showAuthForm('login-form');
+    } catch (error) {
+        showNotification(getAuthErrorMessage(error), 'error');
+    }
+});
+
+// Resend OTP
+document.getElementById('resend-otp').addEventListener('click', async (e) => {
+    e.preventDefault();
+    
+    if (!pendingSignup) {
+        showNotification('No pending signup found', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/auth/resend-otp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: pendingSignup.email })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            startOTPTimer();
+            showNotification('Verification code resent', 'success');
+            // Log OTP for development
+            if (data.debug_otp) {
+                console.log('New OTP:', data.debug_otp);
+            }
+        } else {
+            showNotification('Failed to resend code', 'error');
+        }
+    } catch (error) {
+        showNotification('Network error. Please try again.', 'error');
+    }
+});
+
+// Change Email
+document.getElementById('change-email').addEventListener('click', (e) => {
+    e.preventDefault();
+    showAuthForm('signup-form');
+});
+
+// Logout
+document.getElementById('logout-btn').addEventListener('click', () => {
+    auth.signOut();
+});
+
+function handleLogin(user) {
+    currentUser = user;
+    showScreen('welcome');
+    document.getElementById('user-greeting').textContent = `Welcome, ${user.displayName || user.email}!`;
+    showNotification('Login successful!', 'success');
+}
+
+function getAuthErrorMessage(error) {
+    switch (error.code) {
+        case 'auth/invalid-email': return 'Invalid email address';
+        case 'auth/user-disabled': return 'This account has been disabled';
+        case 'auth/user-not-found': return 'No account found with this email';
+        case 'auth/wrong-password': return 'Incorrect password';
+        case 'auth/email-already-in-use': return 'An account with this email already exists';
+        case 'auth/weak-password': return 'Password should be at least 6 characters';
+        case 'auth/network-request-failed': return 'Network error. Please check your connection';
+        default: return error.message || 'Authentication failed';
+    }
+}
+
+// Firebase Auth State Listener
+auth.onAuthStateChanged((user) => {
+    if (user) {
+        handleLogin(user);
+    } else {
+        currentUser = null;
+        showScreen('auth');
+    }
+});
+
+// Chat functionality
+document.getElementById('start-btn').addEventListener('click', function() {
+    const firstPrompt = document.getElementById('first-prompt').value.trim();
+    if (firstPrompt) {
+        // Switch to chat screen
+        showScreen('chat');
+        
+        // Automatically send the first question
+        setTimeout(() => {
+            document.getElementById('prompt-input').value = firstPrompt;
+            sendMessage();
+        }, 500);
+    } else {
+        showNotification('Please enter a question first', 'error');
+    }
+});
+
+document.getElementById('ask-btn').addEventListener('click', sendMessage);
+
+document.getElementById('prompt-input').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+    }
+});
+
+async function sendMessage() {
+    const input = document.getElementById('prompt-input');
+    const message = input.value.trim();
+    
+    if (!message) return;
+    
+    // Add message to chat
+    addMessage(message, 'user');
+    input.value = '';
+    
+    try {
+        // Get Firebase token
+        const token = await currentUser.getIdToken();
+        
+        // Send to backend
+        const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ message })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            addMessage(data.response, 'assistant');
+        } else {
+            addMessage('Error: ' + (data.error || 'Failed to get response'), 'error');
+        }
+    } catch (error) {
+        addMessage('Network error. Please try again.', 'error');
+    }
+}
+
+function addMessage(text, sender) {
+    const messages = document.getElementById('chat-messages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${sender}`;
+    messageDiv.textContent = text;
+    messages.appendChild(messageDiv);
+    messages.scrollTop = messages.scrollHeight;
+}
+
+// Initialize
+setupOTPInputs();
+showScreen('auth');
 </script>
-
 </body>
-
 </html>
