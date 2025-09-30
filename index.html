@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tripod</title>
-    <link rel="stylesheet" href='style.css'>
+    <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     
     <!-- Firebase SDK -->
@@ -138,7 +138,9 @@
         </div>
         <div class="input-group">
             <textarea id="first-prompt" placeholder="Ask your first question..."></textarea>
-            <button id="start-btn" class="send-btn">Ask</button>
+            <button id="start-btn" class="shadow__btn">
+                AskLurk
+            </button>
         </div>
         <div class="user-menu">
             <button id="logout-btn" class="logout-btn">
@@ -168,6 +170,9 @@
                     <i class="fas fa-plus"></i>
                 </button>
                 <div class="token-counter" id="token-counter">0 / 300k</div>
+                <button id="toggle-sidebar-btn" class="btn-toggle-sidebar" title="Close Sidebar">
+                    <i class="fas fa-times"></i>
+                </button>
                 <button id="fullscreen-btn" class="btn-fullscreen" title="Toggle Fullscreen">
                     <i class="fas fa-expand"></i>
                 </button>
@@ -250,6 +255,7 @@ const askBtn = document.getElementById('ask-btn');
 const chatContainer = document.getElementById('chat-container');
 const historyList = document.getElementById('history-list');
 const newChatBtn = document.getElementById('new-chat-btn');
+const toggleSidebarBtn = document.getElementById('toggle-sidebar-btn');
 const sidebar = document.getElementById('sidebar');
 const mainArea = document.getElementById('main-area');
 const floatingToggleBtn = document.getElementById('floating-toggle-btn');
@@ -561,16 +567,19 @@ function toggleSidebar(){
         sidebar.classList.remove('sidebar-closed');
         mainArea.style.marginLeft = '240px';
         mainArea.style.width = 'calc(100vw - 240px)';
+        toggleSidebarBtn.innerHTML = '<i class="fas fa-times"></i>';
         floatingToggleBtn.innerHTML = '<i class="fas fa-times"></i>';
     }else{
         sidebar.classList.add('sidebar-closed');
         mainArea.style.marginLeft = '0';
         mainArea.style.width = '100vw';
+        toggleSidebarBtn.innerHTML = '<i class="fas fa-bars"></i>';
         floatingToggleBtn.innerHTML = '<i class="fas fa-bars"></i>';
     }
 }
 
 floatingToggleBtn.addEventListener('click', toggleSidebar);
+toggleSidebarBtn.addEventListener('click', toggleSidebar);
 
 // Fullscreen functionality
 function toggleFullscreen() {
@@ -718,6 +727,89 @@ fileInput.onchange = (e) => {
     fileInput.value = '';
 };
 
+// AskLurk Feature
+function showAskLurkButton(responseGroup) {
+    if (asklurkUsedThisTurn) return;
+    
+    const asklurkRow = document.createElement('div');
+    asklurkRow.className = 'asklurk-row';
+    asklurkRow.innerHTML = `
+        <button class="asklurk-btn shadow__btn">
+            <i class="fas fa-star"></i> AskLurk - Combine All Answers
+        </button>
+    `;
+    
+    responseGroup.appendChild(asklurkRow);
+    
+    const asklurkBtn = asklurkRow.querySelector('.asklurk-btn');
+    asklurkBtn.addEventListener('click', () => {
+        runAskLurkMerge(responseGroup, asklurkBtn);
+    });
+}
+
+function runAskLurkMerge(responseGroup, btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Merging Answers...';
+    
+    // Get all responses
+    const gpt5Response = responseGroup.querySelector('.gpt5-response').textContent;
+    const grok4Response = responseGroup.querySelector('.grok4-response').textContent;
+    const deepseekResponse = responseGroup.querySelector('.deepseek-response').textContent;
+    
+    // Simulate API call to combine answers
+    setTimeout(() => {
+        const combinedResponse = combineAIResponses(gpt5Response, grok4Response, deepseekResponse);
+        
+        // Create AskLurk result card
+        const asklurkCard = document.createElement('div');
+        asklurkCard.className = 'ai-card asklurk-card';
+        asklurkCard.innerHTML = `
+            <div class="card-header">
+                <div class="badge asklurk-badge">
+                    <i class="fas fa-crown"></i> AskLurk Combined Result
+                </div>
+            </div>
+            <div class="response-display asklurk-response">
+                ${escapeHtml(combinedResponse)}
+            </div>
+        `;
+        
+        // Replace the three cards with the AskLurk result
+        const aiPair = responseGroup.querySelector('.ai-pair');
+        aiPair.innerHTML = '';
+        aiPair.appendChild(asklurkCard);
+        
+        // Remove the AskLurk button
+        btn.parentElement.remove();
+        
+        asklurkUsedThisTurn = true;
+        smoothScrollToBottom();
+        
+    }, 2000);
+}
+
+function combineAIResponses(gpt5, grok4, deepseek) {
+    // Simulate intelligent combination of responses
+    return `Based on the analysis from all three AI models, here's the optimal combined solution:
+
+🔍 **Key Insights from GPT-5**: ${gpt5.split('.')[0]}.
+
+🎨 **Creative Approach from Grok 4**: ${grok4.split('.')[0]}.
+
+🧠 **Deep Analysis from Deepseek**: ${deepseek.split('.')[0]}.
+
+**Final Combined Recommendation**:
+After synthesizing all perspectives, the most effective approach combines the logical structure from GPT-5, innovative thinking from Grok 4, and comprehensive analysis from Deepseek. This integrated solution provides both immediate practical steps and long-term strategic advantages.
+
+**Implementation Steps**:
+1. Start with the systematic framework suggested by GPT-5
+2. Incorporate the creative elements from Grok 4's approach  
+3. Apply the deep analytical insights from Deepseek
+4. Monitor results and iterate based on performance metrics
+
+This combined approach ensures we leverage the strengths of all three AI models for the most robust solution.`;
+}
+
 // Streaming Responses with proper token counting
 async function streamResponses(prompt, responseGroup){
     asklurkUsedThisTurn = false;
@@ -781,6 +873,12 @@ function simulateGPT5Response(responseGroup, response) {
         thinking.style.display = 'none';
         display.textContent = "As GPT-5, I analyze this systematically: " + response + "\n\nMy approach focuses on logical reasoning and comprehensive analysis of the problem space.";
         smoothScrollToBottom();
+        
+        // Show AskLurk button when all responses are ready
+        if (!responseGroup.querySelector('.grok4-thinking').style.display && 
+            !responseGroup.querySelector('.deepseek-thinking').style.display) {
+            showAskLurkButton(responseGroup);
+        }
     }, 1500);
 }
 
@@ -792,6 +890,12 @@ function simulateGrok4Response(responseGroup, response) {
         thinking.style.display = 'none';
         display.textContent = "Grok 4 here! 🤖 Let me approach this creatively: " + response + "\n\nI'm considering unconventional angles and innovative solutions that might not be immediately obvious.";
         smoothScrollToBottom();
+        
+        // Show AskLurk button when all responses are ready
+        if (!responseGroup.querySelector('.gpt5-thinking').style.display && 
+            !responseGroup.querySelector('.deepseek-thinking').style.display) {
+            showAskLurkButton(responseGroup);
+        }
     }, 2500);
 }
 
@@ -803,6 +907,12 @@ function simulateDeepseekResponse(responseGroup, response) {
         thinking.style.display = 'none';
         display.textContent = "Deepseek V3.1 analyzing: " + response + "\n\nMy analysis involves deep pattern recognition and comprehensive understanding of the underlying concepts and relationships.";
         smoothScrollToBottom();
+        
+        // Show AskLurk button when all responses are ready
+        if (!responseGroup.querySelector('.gpt5-thinking').style.display && 
+            !responseGroup.querySelector('.grok4-thinking').style.display) {
+            showAskLurkButton(responseGroup);
+        }
     }, 2000);
 }
 
@@ -927,4 +1037,3 @@ updateTokenCounter();
 </script>
 </body>
 </html>
-
