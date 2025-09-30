@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tripod</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     
     <!-- Firebase SDK -->
@@ -168,8 +168,12 @@
                     <i class="fas fa-plus"></i>
                 </button>
                 <div class="token-counter" id="token-counter">0 / 300k</div>
-                <button id="toggle-sidebar-btn" class="btn-toggle-sidebar" title="Close Sidebar"></button>
-                <button id="theme-toggle-btn" class="btn-theme-toggle" title="Toggle Dark/Light Theme"><i class="fas fa-moon"></i></button>
+                <button id="fullscreen-btn" class="btn-fullscreen" title="Toggle Fullscreen">
+                    <i class="fas fa-expand"></i>
+                </button>
+                <button id="theme-toggle-btn" class="btn-theme-toggle" title="Toggle Dark/Light Theme">
+                    <i class="fas fa-moon"></i>
+                </button>
             </div>
         </div>
         <div id="history-list" class="history-list"></div>
@@ -194,10 +198,14 @@
 
         <div class="input-bar">
             <input type="file" id="file-input" multiple accept="image/*,.pdf,.txt,.doc,.docx" style="display:none;">
-            <button id="attach-btn" class="attach-btn" title="Add file or picture"><i class="fas fa-paperclip"></i></button>
+            <button id="attach-btn" class="attach-btn" title="Add file or picture">
+                <i class="fas fa-paperclip"></i>
+            </button>
 
             <textarea id="prompt-input" placeholder="Type your next thought..." maxlength="1000"></textarea>
-            <button id="ask-btn" class="btn-send"><i class="fas fa-paper-plane"></i></button>
+            <button id="ask-btn" class="btn-send">
+                <i class="fas fa-paper-plane"></i>
+            </button>
         </div>
     </div>
 </div>
@@ -229,6 +237,7 @@ let chatHistory = [];
 let isSidebarOpen = true;
 let asklurkUsedThisTurn = false;
 let selectedFiles = [];
+let isFullscreen = false;
 
 // DOM Elements
 const authModal = document.getElementById('auth-modal');
@@ -241,11 +250,11 @@ const askBtn = document.getElementById('ask-btn');
 const chatContainer = document.getElementById('chat-container');
 const historyList = document.getElementById('history-list');
 const newChatBtn = document.getElementById('new-chat-btn');
-const toggleSidebarBtn = document.getElementById('toggle-sidebar-btn');
 const sidebar = document.getElementById('sidebar');
 const mainArea = document.getElementById('main-area');
 const floatingToggleBtn = document.getElementById('floating-toggle-btn');
 const themeToggleBtn = document.getElementById('theme-toggle-btn');
+const fullscreenBtn = document.getElementById('fullscreen-btn');
 const fileInput = document.getElementById('file-input');
 const attachBtn = document.getElementById('attach-btn');
 const fileChips = document.getElementById('file-chips');
@@ -551,18 +560,36 @@ function toggleSidebar(){
     if (isSidebarOpen){
         sidebar.classList.remove('sidebar-closed');
         mainArea.style.marginLeft = '240px';
-        toggleSidebarBtn.innerHTML = '<i class="fas fa-times"></i>';
+        mainArea.style.width = 'calc(100vw - 240px)';
         floatingToggleBtn.innerHTML = '<i class="fas fa-times"></i>';
     }else{
         sidebar.classList.add('sidebar-closed');
         mainArea.style.marginLeft = '0';
-        toggleSidebarBtn.innerHTML = '<i class="fas fa-bars"></i>';
+        mainArea.style.width = '100vw';
         floatingToggleBtn.innerHTML = '<i class="fas fa-bars"></i>';
     }
 }
 
 floatingToggleBtn.addEventListener('click', toggleSidebar);
-toggleSidebarBtn.addEventListener('click', toggleSidebar);
+
+// Fullscreen functionality
+function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => {
+            console.log(`Error attempting to enable fullscreen: ${err.message}`);
+        });
+        fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
+        isFullscreen = true;
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+            fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
+            isFullscreen = false;
+        }
+    }
+}
+
+fullscreenBtn.addEventListener('click', toggleFullscreen);
 
 // Theme Management
 function loadTheme(){
@@ -620,21 +647,35 @@ function createResponseGroup(){
     group.className = 'response-group';
     group.innerHTML = `
         <div class="ai-pair">
-            <div class="ai-card logic-card">
-                <div class="card-header"><div class="badge logic-badge">Logic AI</div></div>
-                <div class="thinking-container logic-thinking">
-                    <div class="thinking-dots"><span></span><span></span><span></span></div>
-                    <div class="thinking-text">Analysing your question...</div>
+            <div class="ai-card gpt5-card">
+                <div class="card-header">
+                    <div class="badge gpt5-badge">GPT-5</div>
                 </div>
-                <div class="response-display logic-response"></div>
+                <div class="thinking-container gpt5-thinking">
+                    <div class="thinking-dots"><span></span><span></span><span></span></div>
+                    <div class="thinking-text">Reasoning systematically...</div>
+                </div>
+                <div class="response-display gpt5-response"></div>
             </div>
-            <div class="ai-card creative-card">
-                <div class="card-header"><div class="badge creative-badge">Creative AI</div></div>
-                <div class="thinking-container creative-thinking">
+            <div class="ai-card grok4-card">
+                <div class="card-header">
+                    <div class="badge grok4-badge">Grok 4</div>
+                </div>
+                <div class="thinking-container grok4-thinking">
                     <div class="thinking-dots"><span></span><span></span><span></span></div>
                     <div class="thinking-text">Thinking creatively...</div>
                 </div>
-                <div class="response-display creative-response"></div>
+                <div class="response-display grok4-response"></div>
+            </div>
+            <div class="ai-card deepseek-card">
+                <div class="card-header">
+                    <div class="badge deepseek-badge">Deepseek V3.1</div>
+                </div>
+                <div class="thinking-container deepseek-thinking">
+                    <div class="thinking-dots"><span></span><span></span><span></span></div>
+                    <div class="thinking-text">Analyzing deeply...</div>
+                </div>
+                <div class="response-display deepseek-response"></div>
             </div>
         </div>`;
     return group;
@@ -677,15 +718,16 @@ fileInput.onchange = (e) => {
     fileInput.value = '';
 };
 
-// Streaming Responses
+// Streaming Responses with proper token counting
 async function streamResponses(prompt, responseGroup){
     asklurkUsedThisTurn = false;
-    const logicDisplay = responseGroup.querySelector('.logic-response');
-    const creativeDisplay = responseGroup.querySelector('.creative-response');
-    responseGroup.querySelector('.logic-thinking').style.display = 'block';
-    responseGroup.querySelector('.creative-thinking').style.display = 'block';
     
-    let logicBuf = '', creativeBuf = '';
+    // Show all thinking containers
+    responseGroup.querySelector('.gpt5-thinking').style.display = 'block';
+    responseGroup.querySelector('.grok4-thinking').style.display = 'block';
+    responseGroup.querySelector('.deepseek-thinking').style.display = 'block';
+    
+    let gpt5Buf = '', grok4Buf = '', deepseekBuf = '';
     
     try {
         const token = await currentUser.getIdToken();
@@ -705,49 +747,63 @@ async function streamResponses(prompt, responseGroup){
         
         const data = await res.json();
         
-        // Simulate streaming for now
-        simulateLogicResponse(logicDisplay, responseGroup, data.response);
-        simulateCreativeResponse(creativeDisplay, responseGroup, data.response);
+        // Calculate tokens based on prompt length and response
+        const promptTokens = Math.ceil(prompt.length / 4); // Rough estimate
+        const responseTokens = Math.ceil(data.response.length / 4);
+        const totalTokens = promptTokens + responseTokens;
+        
+        // Update token usage (multiply by 3 for three AI models)
+        tokensUsed += totalTokens * 3;
+        updateTokenCounter();
+        
+        // Simulate streaming for all three models
+        simulateGPT5Response(responseGroup, data.response);
+        simulateGrok4Response(responseGroup, data.response);
+        simulateDeepseekResponse(responseGroup, data.response);
         
     } catch(err) {
         console.error('Stream error:', err);
         responseGroup.querySelectorAll('.response-display').forEach(el=>{
             el.innerHTML = `<div class="error-banner">⚠️ Failed to connect. ${err.message}</div>`;
         });
-        responseGroup.querySelector('.logic-thinking').style.display = 'none';
-        responseGroup.querySelector('.creative-thinking').style.display = 'none';
+        responseGroup.querySelector('.gpt5-thinking').style.display = 'none';
+        responseGroup.querySelector('.grok4-thinking').style.display = 'none';
+        responseGroup.querySelector('.deepseek-thinking').style.display = 'none';
     }
 }
 
-// Simulate AI responses
-function simulateLogicResponse(display, responseGroup, response) {
-    const thinking = responseGroup.querySelector('.logic-thinking');
-    const responses = [
-        "Based on logical analysis: " + response,
-        "From a systematic perspective: " + response,
-        "The data suggests: " + response
-    ];
+// Simulate AI responses with different personalities
+function simulateGPT5Response(responseGroup, response) {
+    const thinking = responseGroup.querySelector('.gpt5-thinking');
+    const display = responseGroup.querySelector('.gpt5-response');
     
     setTimeout(() => {
         thinking.style.display = 'none';
-        display.textContent = responses[Math.floor(Math.random() * responses.length)];
+        display.textContent = "As GPT-5, I analyze this systematically: " + response + "\n\nMy approach focuses on logical reasoning and comprehensive analysis of the problem space.";
         smoothScrollToBottom();
-    }, 2000);
+    }, 1500);
 }
 
-function simulateCreativeResponse(display, responseGroup, response) {
-    const thinking = responseGroup.querySelector('.creative-thinking');
-    const responses = [
-        "Here's a creative approach: " + response,
-        "Thinking outside the box: " + response,
-        "From a creative perspective: " + response
-    ];
+function simulateGrok4Response(responseGroup, response) {
+    const thinking = responseGroup.querySelector('.grok4-thinking');
+    const display = responseGroup.querySelector('.grok4-response');
     
     setTimeout(() => {
         thinking.style.display = 'none';
-        display.textContent = responses[Math.floor(Math.random() * responses.length)];
+        display.textContent = "Grok 4 here! 🤖 Let me approach this creatively: " + response + "\n\nI'm considering unconventional angles and innovative solutions that might not be immediately obvious.";
         smoothScrollToBottom();
-    }, 3000);
+    }, 2500);
+}
+
+function simulateDeepseekResponse(responseGroup, response) {
+    const thinking = responseGroup.querySelector('.deepseek-thinking');
+    const display = responseGroup.querySelector('.deepseek-response');
+    
+    setTimeout(() => {
+        thinking.style.display = 'none';
+        display.textContent = "Deepseek V3.1 analyzing: " + response + "\n\nMy analysis involves deep pattern recognition and comprehensive understanding of the underlying concepts and relationships.";
+        smoothScrollToBottom();
+    }, 2000);
 }
 
 async function uploadFiles() {
@@ -871,4 +927,3 @@ updateTokenCounter();
 </script>
 </body>
 </html>
-
