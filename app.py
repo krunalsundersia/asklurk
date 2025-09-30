@@ -1,293 +1,270 @@
-import os, json, logging, sys, re, uuid
-from flask import Flask, request, Response, jsonify, render_template
-from flask_cors import CORS
-from dotenv import load_dotenv
-from openai import OpenAI
-import tiktoken
-
-enc = tiktoken.get_encoding("cl100k_base")
-TOKEN_LIMIT = 300_000
-tokens_used = 0
-
-load_dotenv()
-logging.basicConfig(level=logging.DEBUG, format="%(levelname)s | %(message)s")
+from flask import Flask, render_template, request, jsonify, session
+import os
+import logging
+from datetime import datetime, timedelta
+import random
+import firebase_admin
+from firebase_admin import credentials, auth, firestore
+import json
 
 app = Flask(__name__)
-CORS(app)
+app.secret_key = os.environ.get("SESSION_SECRET", "your-secret-key-here")
 
-KEY = os.getenv("OPENROUTER_API_KEY")
-if not KEY:
-    logging.error("OPENROUTER_API_KEY missing – export it or add to .env")
-    sys.exit(1)
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-# Define all 6 AI models with their personalities
-MODELS = {
-    "logic": {"name": "LogicBot", "description": "analytical, structured, step-by-step"},
-    "creative": {"name": "CreativeBot", "description": "poetic, metaphorical, emotional"},
-    "technical": {"name": "TechBot", "description": "precise, detailed, code-focused"},
-    "concise": {"name": "BriefBot", "description": "succinct, to-the-point, efficient"},
-    "friendly": {"name": "FriendBot", "description": "warm, supportive, conversational"},
-    "expert": {"name": "ExpertBot", "description": "comprehensive, authoritative, in-depth"}
-}
-
-# System prompts for each model
-SYSTEM_PROMPTS = {
-    "logic": "You are LogicBot — analytical, structured, step-by-step. Provide clear, logical reasoning and systematic approaches.",
-    "creative": "You are CreativeBot — poetic, metaphorical, emotional. Use imaginative language and creative perspectives.",
-    "technical": "You are TechBot — highly technical, precise, focused on implementation details and code. Provide specific technical insights.",
-    "concise": "You are BriefBot — extremely concise, direct, and to-the-point. Avoid unnecessary words while maintaining clarity.",
-    "friendly": "You are FriendBot — warm, supportive, and conversational. Make the user feel comfortable with a friendly tone.",
-    "expert": "You are ExpertBot — comprehensive, authoritative, and in-depth. Provide thorough explanations with expert insights."
-}
-
-# OpenRouter models to use
-OPENROUTER_MODELS = {
-    "logic": "openai/gpt-3.5-turbo",
-    "creative": "anthropic/claude-3-sonnet", 
-    "technical": "meta-llama/llama-3-70b-instruct",
-    "concise": "google/gemini-pro",
-    "friendly": "mistralai/mistral-7b-instruct",
-    "expert": "microsoft/wizardlm-2-8x22b",
-    "asklurk": "openai/gpt-4"  # Use a powerful model for synthesis
-}
-
-def generate(bot_name: str, system: str, user: str):
-    global tokens_used
-    try:
-        client = OpenAI(
-            base_url="https://openrouter.ai/api/v1", 
-            api_key=KEY
-        )
-        
-        # Calculate tokens for the request
-        system_tokens = len(enc.encode(system))
-        user_tokens = len(enc.encode(user))
-        tokens_used += system_tokens + user_tokens
-        
-        model = OPENROUTER_MODELS.get(bot_name, "deepseek/deepseek-r1-0528:free")
-        
-        stream = client.chat.completions.create(
-            extra_headers={
-                "HTTP-Referer": "http://localhost:5000", 
-                "X-Title": "6-Model-Chat"
-            },
-            model=model,
-            messages=[
-                {"role": "system", "content": system},
-                {"role": "user", "content": user}
-            ],
-            temperature=0.7,
-            max_tokens=500,
-            stream=True,
-        )
-        
-        bot_tokens = 0
-        full_response = ""
-        
-        for chunk in stream:
-            if chunk.choices and chunk.choices[0].delta.content:
-                delta = chunk.choices[0].delta.content
-                full_response += delta
-                bot_tokens += len(enc.encode(delta))
-                yield f"data: {json.dumps({'bot': bot_name, 'text': delta})}\n\n"
-            
-            if chunk.choices and chunk.choices[0].finish_reason:
-                break
-        
-        # Update global token count
-        tokens_used += bot_tokens
-        yield f"data: {json.dumps({'bot': bot_name, 'done': True, 'tokens': tokens_used})}\n\n"
-        
-    except Exception as exc:
-        logging.error(f"Error generating response for {bot_name}: {str(exc)}")
-        yield f"data: {json.dumps({'bot': bot_name, 'error': str(exc)})}\n\n"
-
-@app.route("/asklurk", methods=["POST"])
-def asklurk():
-    data = request.json or {}
-    answers = data.get("answers", {})
-    prompt = data.get("prompt", "")
+# Initialize Firebase Admin SDK
+try:
+    firebase_credentials = {
+        "type": "service_account",
+        "project_id": os.environ.get("FIREBASE_PROJECT_ID"),
+        "private_key_id": os.environ.get("FIREBASE_PRIVATE_KEY_ID"),
+        "private_key": os.environ.get("FIREBASE_PRIVATE_KEY", "").replace('\\n', '\n'),
+        "client_email": os.environ.get("FIREBASE_CLIENT_EMAIL"),
+        "client_id": os.environ.get("FIREBASE_CLIENT_ID"),
+        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+        "token_uri": "https://oauth2.googleapis.com/token",
+    }
     
-    # Check if we have responses from all 6 models
-    missing_models = [key for key in MODELS.keys() if key not in answers]
-    if missing_models:
-        return jsonify(best="", error=f"Missing responses from: {', '.join(missing_models)}"), 400
+    cred = credentials.Certificate(firebase_credentials)
+    firebase_admin.initialize_app(cred)
+    db = firestore.client()
+    logger.info("Firebase Admin SDK initialized successfully")
     
-    # Merge all responses using AI
-    try:
-        client = OpenAI(
-            base_url="https://openrouter.ai/api/v1", 
-            api_key=KEY
-        )
-        
-        # Prepare the merged content
-        merged_content = f"Original question: {prompt}\n\n"
-        for key in MODELS.keys():
-            merged_content += f"## {MODELS[key]['name']}:\n{answers[key]}\n\n"
-        
-        # Ask AI to synthesize the best answer
-        response = client.chat.completions.create(
-            extra_headers={
-                "HTTP-Referer": "http://localhost:5000", 
-                "X-Title": "6-Model-Chat"
-            },
-            model=OPENROUTER_MODELS["asklurk"],
-            messages=[
-                {
-                    "role": "system", 
-                    "content": """You are AskLurk - an expert AI synthesizer. Your task is to analyze responses from 6 different AI models and create the single best, most comprehensive answer.
+except Exception as e:
+    logger.warning(f"Firebase Admin SDK initialization failed: {e}")
+    db = None
 
-Guidelines:
-1. Combine the strengths of each model's approach
-2. Maintain accuracy and clarity
-3. Provide a well-structured, comprehensive response
-4. Don't just repeat what others said - synthesize new insights
-5. Keep it engaging and informative"""
-                },
-                {
-                    "role": "user", 
-                    "content": f"""Please analyze these 6 AI responses to the question: "{prompt}"
+# In-memory storage for OTP (use Redis in production)
+otp_storage = {}
 
-Here are the responses:
-{merged_content}
-
-Please provide the best synthesized answer that combines the strengths of all approaches:"""
-                }
-            ],
-            temperature=0.3,
-            max_tokens=800,
-        )
-        
-        best_answer = response.choices[0].message.content
-        
-        # Update token usage for AskLurk
-        global tokens_used
-        asklurk_tokens = len(enc.encode(best_answer))
-        tokens_used += asklurk_tokens
-        
-        return jsonify(best=best_answer, tokens_used=tokens_used)
-        
-    except Exception as e:
-        logging.error(f"AskLurk error: {str(e)}")
-        # Fallback: return a combined response
-        combined_response = f"## AskLurk Synthesis\n\nBased on analysis of 6 AI models:\n\n"
-        for key, response_text in answers.items():
-            combined_response += f"**{MODELS[key]['name']}**: {response_text[:200]}...\n\n"
-        return jsonify(best=combined_response, error="AI synthesis failed, using combined view")
-
-@app.route('/upload', methods=['POST'])
-def upload():
-    if 'files' not in request.files:
-        return jsonify(urls=[], error="No files provided"), 400
-    
-    files = request.files.getlist('files')
-    urls = []
-    
-    for file in files:
-        if file.filename == '':
-            continue
-        
-        # Validate file type
-        allowed_extensions = {'.png', '.jpg', '.jpeg', '.gif', '.pdf', '.txt', '.doc', '.docx'}
-        ext = os.path.splitext(file.filename)[1].lower()
-        
-        if ext not in allowed_extensions:
-            continue
-            
-        # Generate unique filename
-        name = f"{uuid.uuid4().hex}{ext}"
-        path = os.path.join(UPLOAD_FOLDER, name)
-        
-        try:
-            file.save(path)
-            urls.append(f"/static/uploads/{name}")
-        except Exception as e:
-            logging.error(f"Error saving file {file.filename}: {str(e)}")
-    
-    return jsonify(urls=urls)
-
-@app.route("/")
+@app.route('/')
 def index():
-    return render_template("index.html")
+    return render_template('index.html')
 
-@app.route("/tokens", methods=["GET"])
-def get_tokens():
-    """Endpoint to get current token usage"""
-    return jsonify({
-        "tokens_used": tokens_used,
-        "token_limit": TOKEN_LIMIT,
-        "remaining_tokens": TOKEN_LIMIT - tokens_used,
-        "usage_percentage": (tokens_used / TOKEN_LIMIT) * 100
-    })
+def verify_firebase_token(id_token):
+    try:
+        decoded_token = auth.verify_id_token(id_token)
+        return decoded_token
+    except Exception as e:
+        logger.error(f"Token verification failed: {e}")
+        return None
 
-@app.route("/reset-tokens", methods=["POST"])
-def reset_tokens():
-    """Endpoint to reset token counter"""
-    global tokens_used
-    tokens_used = 0
-    return jsonify({"message": "Token counter reset", "tokens_used": tokens_used})
-
-@app.route("/stream", methods=["POST"])
-def stream():
-    data = request.json or {}
-    prompt = data.get("prompt", "").strip()
-    fileUrls = data.get("fileUrls", [])
-    
-    if not prompt and not fileUrls:
-        return jsonify(error="Empty prompt and no files provided"), 400
-    
-    # Check token limit
-    if tokens_used >= TOKEN_LIMIT:
-        return jsonify(error=f"Token limit reached ({tokens_used}/{TOKEN_LIMIT})"), 429
-    
-    # Prepare prompt with file information
-    full_prompt = prompt
-    if fileUrls:
-        full_prompt += "\n\n[User uploaded files: " + ", ".join(fileUrls) + "]"
-
-    def event_stream():
-        # Create generators for all 6 models
-        generators = {
-            key: generate(key, SYSTEM_PROMPTS[key], full_prompt) 
-            for key in MODELS.keys()
+# OTP Verification Routes
+@app.route('/api/auth/send-otp', methods=['POST'])
+def send_otp():
+    """Send OTP to email for verification"""
+    try:
+        data = request.json
+        email = data.get('email')
+        
+        if not email:
+            return jsonify({'error': 'Email is required'}), 400
+        
+        # Generate 6-digit OTP
+        otp = str(random.randint(100000, 999999))
+        
+        # Store OTP with timestamp (valid for 10 minutes)
+        otp_storage[email] = {
+            'otp': otp,
+            'created_at': datetime.now(),
+            'attempts': 0
         }
         
-        # Stream responses from all models concurrently
-        active_generators = list(generators.items())
-        completed_bots = set()
+        # TODO: Integrate with your email service (SendGrid, SMTP, etc.)
+        # For now, we'll log the OTP (remove this in production)
+        logger.info(f"OTP for {email}: {otp}")
         
-        while active_generators:
-            for bot_name, generator in active_generators[:]:
-                try:
-                    chunk = next(generator)
-                    yield chunk
-                    
-                except StopIteration:
-                    active_generators.remove((bot_name, generator))
-                    completed_bots.add(bot_name)
-                
-                except Exception as e:
-                    logging.error(f"Error in generator for {bot_name}: {str(e)}")
-                    active_generators.remove((bot_name, generator))
-                    completed_bots.add(bot_name)
-                    yield f"data: {json.dumps({'bot': bot_name, 'error': str(e)})}\n\n"
+        # Simulate email sending
+        print(f"📧 OTP sent to {email}: {otp}")
         
-        # Final completion message
-        yield f"data: {json.dumps({'all_done': True, 'tokens': tokens_used})}\n\n"
+        return jsonify({
+            'success': True,
+            'message': 'OTP sent successfully',
+            'debug_otp': otp  # Remove this in production
+        })
+        
+    except Exception as e:
+        logger.error(f"Send OTP error: {e}")
+        return jsonify({'error': 'Failed to send OTP'}), 500
 
-    return Response(
-        event_stream(),
-        mimetype="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache", 
-            "Connection": "keep-alive", 
-            "X-Accel-Buffering": "no"
-        },
-    )
+@app.route('/api/auth/verify-otp', methods=['POST'])
+def verify_otp():
+    """Verify OTP and create user account"""
+    try:
+        data = request.json
+        email = data.get('email')
+        otp = data.get('otp')
+        name = data.get('name', '')
+        password = data.get('password')
+        
+        if not email or not otp:
+            return jsonify({'error': 'Email and OTP are required'}), 400
+        
+        # Check if OTP exists and is valid
+        if email not in otp_storage:
+            return jsonify({'error': 'OTP not found or expired'}), 400
+        
+        otp_data = otp_storage[email]
+        
+        # Check if OTP is expired (10 minutes)
+        if datetime.now() - otp_data['created_at'] > timedelta(minutes=10):
+            del otp_storage[email]
+            return jsonify({'error': 'OTP has expired'}), 400
+        
+        # Check attempts
+        if otp_data['attempts'] >= 3:
+            del otp_storage[email]
+            return jsonify({'error': 'Too many failed attempts'}), 400
+        
+        # Verify OTP
+        if otp_data['otp'] != otp:
+            otp_data['attempts'] += 1
+            return jsonify({'error': 'Invalid OTP'}), 400
+        
+        # OTP verified successfully - create user account
+        try:
+            # Create user in Firebase Auth
+            user = auth.create_user(
+                email=email,
+                password=password,
+                display_name=name
+            )
+            
+            # Send email verification
+            auth.generate_email_verification_link(email)
+            
+            # Create user document in Firestore
+            if db:
+                user_ref = db.collection('users').document(user.uid)
+                user_ref.set({
+                    'email': email,
+                    'name': name,
+                    'created_at': firestore.SERVER_TIMESTAMP,
+                    'email_verified': False,
+                    'last_login': firestore.SERVER_TIMESTAMP
+                })
+            
+            # Clean up OTP
+            del otp_storage[email]
+            
+            return jsonify({
+                'success': True,
+                'message': 'Account created successfully',
+                'user': {
+                    'uid': user.uid,
+                    'email': user.email,
+                    'name': name
+                }
+            })
+            
+        except Exception as firebase_error:
+            logger.error(f"Firebase user creation error: {firebase_error}")
+            return jsonify({'error': 'Failed to create user account'}), 500
+        
+    except Exception as e:
+        logger.error(f"Verify OTP error: {e}")
+        return jsonify({'error': 'Failed to verify OTP'}), 500
 
-# Create uploads directory
-UPLOAD_FOLDER = 'static/uploads'
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+@app.route('/api/auth/resend-otp', methods=['POST'])
+def resend_otp():
+    """Resend OTP to email"""
+    try:
+        data = request.json
+        email = data.get('email')
+        
+        if not email:
+            return jsonify({'error': 'Email is required'}), 400
+        
+        # Generate new OTP
+        otp = str(random.randint(100000, 999999))
+        
+        # Update OTP storage
+        otp_storage[email] = {
+            'otp': otp,
+            'created_at': datetime.now(),
+            'attempts': 0
+        }
+        
+        # Log OTP (remove in production)
+        logger.info(f"New OTP for {email}: {otp}")
+        print(f"📧 New OTP sent to {email}: {otp}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'OTP resent successfully',
+            'debug_otp': otp  # Remove this in production
+        })
+        
+    except Exception as e:
+        logger.error(f"Resend OTP error: {e}")
+        return jsonify({'error': 'Failed to resend OTP'}), 500
 
-if __name__ == "__main__":
-    app.run(debug=True, threaded=True, host="0.0.0.0", port=5000)
+# Protected API routes
+@app.route('/api/chat', methods=['POST'])
+def chat():
+    try:
+        id_token = request.headers.get('Authorization', '').replace('Bearer ', '')
+        if not id_token:
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        decoded_token = verify_firebase_token(id_token)
+        if not decoded_token:
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        user_id = decoded_token['uid']
+        data = request.json
+        message = data.get('message', '')
+        
+        if not message:
+            return jsonify({'error': 'Message is required'}), 400
+        
+        # Save to Firestore
+        chat_data = {
+            'user_id': user_id,
+            'message': message,
+            'response': f"Echo: {message}",  # Replace with actual AI response
+            'timestamp': datetime.now().isoformat()
+        }
+        
+        if db:
+            db.collection('chats').add(chat_data)
+        
+        return jsonify({
+            'response': f"Echo: {message}",
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"Chat error: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/api/user/profile', methods=['GET'])
+def get_user_profile():
+    try:
+        id_token = request.headers.get('Authorization', '').replace('Bearer ', '')
+        if not id_token:
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        decoded_token = verify_firebase_token(id_token)
+        if not decoded_token:
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        return jsonify({
+            'user': {
+                'uid': decoded_token['uid'],
+                'email': decoded_token.get('email'),
+                'name': decoded_token.get('name', 'User'),
+                'email_verified': decoded_token.get('email_verified', False)
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Profile error: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    debug = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
+    app.run(host='0.0.0.0', port=port, debug=debug)
