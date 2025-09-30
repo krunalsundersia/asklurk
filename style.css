@@ -1,12 +1,13 @@
 /* 🎨 VARIABLES */
 :root {
     --bg-primary: #000;
-    --bg-secondary: #0000;
+    --bg-secondary: #1a1a1a;
     --bg-tertiary: #111;
     --sidebar-bg: #080808;
     --card-bg: #0f0f0f;
-    --logic-color: #5ac8fa;
-    --creative-color: #ff6b9d;
+    --gpt5-color: #10a37f;
+    --grok4-color: #ff6b35;
+    --deepseek-color: #6366f1;
     --accent-gradient: rgb(38, 129, 194);
     --text-primary: #fff;
     --text-secondary: #aaa;
@@ -335,7 +336,7 @@ body {
 .brand h1 {
     font-size: 3rem;
     font-weight: 700;
-    background: linear-gradient(135deg, var(--accent-gradient), var(--creative-color));
+    background: linear-gradient(135deg, var(--gpt5-color), var(--grok4-color), var(--deepseek-color));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     margin-bottom: 1rem;
@@ -424,7 +425,7 @@ body {
     left: 0;
     top: 0;
     overflow-y: auto;
-    transition: transform 0.2s ease;
+    transition: transform 0.3s ease;
     z-index: 100;
     border-right: 1px solid var(--border-light);
 }
@@ -480,7 +481,7 @@ body {
 }
 
 .btn-new-chat,
-.btn-toggle-sidebar,
+.btn-fullscreen,
 .btn-theme-toggle {
     width: 36px;
     height: 36px;
@@ -503,13 +504,13 @@ body {
     transform: scale(1.1);
 }
 
-.btn-toggle-sidebar,
+.btn-fullscreen,
 .btn-theme-toggle {
     background: var(--bg-tertiary);
     color: var(--text-secondary);
 }
 
-.btn-toggle-sidebar:hover,
+.btn-fullscreen:hover,
 .btn-theme-toggle:hover {
     background: var(--accent-gradient);
     color: white;
@@ -546,10 +547,16 @@ body {
     height: 100vh;
     display: flex;
     flex-direction: column;
-    transition: margin-left 0.3s ease;
+    transition: margin-left 0.3s ease, width 0.3s ease;
     margin-left: 240px;
     width: calc(100vw - 240px);
     position: relative;
+}
+
+/* Full width when sidebar is closed */
+.sidebar-closed + .main-area {
+    margin-left: 0;
+    width: 100vw;
 }
 
 /* ---------- CHAT HEADER ---------- */
@@ -565,7 +572,7 @@ body {
 .chat-header h2 {
     font-size: 1.5rem;
     font-weight: 600;
-    background: linear-gradient(135deg, var(--accent-gradient), var(--creative-color));
+    background: linear-gradient(135deg, var(--gpt5-color), var(--grok4-color), var(--deepseek-color));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
@@ -590,6 +597,7 @@ body {
     flex-direction: column;
     width: 100%;
     padding: 20px;
+    gap: 20px;
 }
 
 /* ---------- MESSAGES ---------- */
@@ -633,7 +641,7 @@ body {
     border-radius: 12px 12px 0 12px;
 }
 
-/* ---------- AI CARDS ---------- */
+/* ---------- THREE CARD LAYOUT ---------- */
 .response-group {
     width: 100%;
     padding: 0;
@@ -642,9 +650,10 @@ body {
 
 .ai-pair {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 15px;
     width: 100%;
+    min-height: 400px;
 }
 
 .ai-card {
@@ -654,7 +663,7 @@ body {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    min-height: 200px;
+    min-height: 350px;
 }
 
 .card-header {
@@ -674,14 +683,22 @@ body {
     background: var(--bg-tertiary);
 }
 
-.logic-badge {
-    color: var(--logic-color);
-    border: 1px solid var(--logic-color);
+.gpt5-badge {
+    color: var(--gpt5-color);
+    border: 1px solid var(--gpt5-color);
+    background: rgba(16, 163, 127, 0.1);
 }
 
-.creative-badge {
-    color: var(--creative-color);
-    border: 1px solid var(--creative-color);
+.grok4-badge {
+    color: var(--grok4-color);
+    border: 1px solid var(--grok4-color);
+    background: rgba(255, 107, 53, 0.1);
+}
+
+.deepseek-badge {
+    color: var(--deepseek-color);
+    border: 1px solid var(--deepseek-color);
+    background: rgba(99, 102, 241, 0.1);
 }
 
 .thinking-container {
@@ -852,6 +869,7 @@ body {
     background: var(--bg-tertiary);
     border-radius: 12px;
     margin-right: auto;
+    font-weight: 500;
 }
 
 /* ---------- CREATIVE FLOATING TOGGLE ---------- */
@@ -879,7 +897,32 @@ body {
     transform: scale(1.1) rotate(90deg);
 }
 
+/* ---------- FULLSCREEN MODE ---------- */
+:fullscreen .main-area {
+    margin-left: 0 !important;
+    width: 100vw !important;
+}
+
+:fullscreen .sidebar {
+    display: none;
+}
+
+:fullscreen .creative-float-btn {
+    display: none;
+}
+
 /* ---------- RESPONSIVE DESIGN ---------- */
+@media (max-width: 1200px) {
+    .ai-pair {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .ai-card {
+        min-height: 250px;
+    }
+}
+
 @media (max-width: 768px) {
     .auth-container {
         margin: 20px;
@@ -915,6 +958,17 @@ body {
         height: 40px;
         font-size: 18px;
     }
+    
+    .chat-header {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+    
+    .user-info {
+        flex-direction: column;
+        gap: 10px;
+    }
 }
 
 @media (max-width: 480px) {
@@ -932,17 +986,6 @@ body {
     
     .brand h1 {
         font-size: 2.5rem;
-    }
-    
-    .chat-header {
-        flex-direction: column;
-        gap: 10px;
-        text-align: center;
-    }
-    
-    .user-info {
-        flex-direction: column;
-        gap: 10px;
     }
 }
 
