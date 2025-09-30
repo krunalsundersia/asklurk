@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tripod</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     
     <!-- Firebase SDK -->
@@ -138,8 +138,9 @@
         </div>
         <div class="input-group">
             <textarea id="first-prompt" placeholder="Ask your first question..."></textarea>
-            <button id="start-btn" class="shadow__btn">
-                AskLurk
+            <button id="start-btn" class="animated-btn">
+                <span class="animated-btn-text">AskLurk</span>
+                <div class="wave"></div>
             </button>
         </div>
         <div class="user-menu">
@@ -170,9 +171,6 @@
                     <i class="fas fa-plus"></i>
                 </button>
                 <div class="token-counter" id="token-counter">0 / 300k</div>
-                <button id="toggle-sidebar-btn" class="btn-toggle-sidebar" title="Close Sidebar">
-                    <i class="fas fa-times"></i>
-                </button>
                 <button id="fullscreen-btn" class="btn-fullscreen" title="Toggle Fullscreen">
                     <i class="fas fa-expand"></i>
                 </button>
@@ -255,7 +253,6 @@ const askBtn = document.getElementById('ask-btn');
 const chatContainer = document.getElementById('chat-container');
 const historyList = document.getElementById('history-list');
 const newChatBtn = document.getElementById('new-chat-btn');
-const toggleSidebarBtn = document.getElementById('toggle-sidebar-btn');
 const sidebar = document.getElementById('sidebar');
 const mainArea = document.getElementById('main-area');
 const floatingToggleBtn = document.getElementById('floating-toggle-btn');
@@ -567,19 +564,16 @@ function toggleSidebar(){
         sidebar.classList.remove('sidebar-closed');
         mainArea.style.marginLeft = '240px';
         mainArea.style.width = 'calc(100vw - 240px)';
-        toggleSidebarBtn.innerHTML = '<i class="fas fa-times"></i>';
         floatingToggleBtn.innerHTML = '<i class="fas fa-times"></i>';
     }else{
         sidebar.classList.add('sidebar-closed');
         mainArea.style.marginLeft = '0';
         mainArea.style.width = '100vw';
-        toggleSidebarBtn.innerHTML = '<i class="fas fa-bars"></i>';
         floatingToggleBtn.innerHTML = '<i class="fas fa-bars"></i>';
     }
 }
 
 floatingToggleBtn.addEventListener('click', toggleSidebar);
-toggleSidebarBtn.addEventListener('click', toggleSidebar);
 
 // Fullscreen functionality
 function toggleFullscreen() {
