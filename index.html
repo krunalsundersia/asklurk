@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tripod</title>
+    <title>Tripod - AI Chat Experience</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     
@@ -16,6 +16,14 @@
 <!-- LOGIN/SIGNUP MODAL -->
 <div id="auth-modal" class="auth-modal" style="display: flex;">
     <div class="auth-container">
+        <div class="auth-header">
+            <div class="brand-logo">
+                <i class="fas fa-robot"></i>
+                <h1>Tripod</h1>
+            </div>
+            <p class="tagline">Your single chat, their combined brilliance</p>
+        </div>
+
         <div class="auth-tabs">
             <button class="auth-tab active" data-tab="login">Login</button>
             <button class="auth-tab" data-tab="signup">Sign Up</button>
@@ -37,12 +45,12 @@
 
             <form id="login-email-form">
                 <div class="form-group">
-                    <input type="email" id="login-email" placeholder="Email address" required>
                     <i class="fas fa-envelope"></i>
+                    <input type="email" id="login-email" placeholder="Email address" required>
                 </div>
                 <div class="form-group">
-                    <input type="password" id="login-password" placeholder="Password" required>
                     <i class="fas fa-lock"></i>
+                    <input type="password" id="login-password" placeholder="Password" required>
                 </div>
                 <button type="submit" class="auth-submit-btn">Sign In</button>
             </form>
@@ -68,16 +76,16 @@
 
             <form id="signup-email-form">
                 <div class="form-group">
-                    <input type="text" id="signup-name" placeholder="Full name" required>
                     <i class="fas fa-user"></i>
+                    <input type="text" id="signup-name" placeholder="Full name" required>
                 </div>
                 <div class="form-group">
-                    <input type="email" id="signup-email" placeholder="Email address" required>
                     <i class="fas fa-envelope"></i>
+                    <input type="email" id="signup-email" placeholder="Email address" required>
                 </div>
                 <div class="form-group">
-                    <input type="password" id="signup-password" placeholder="Password" required>
                     <i class="fas fa-lock"></i>
+                    <input type="password" id="signup-password" placeholder="Password" required>
                 </div>
                 <button type="submit" class="auth-submit-btn">Send Verification Code</button>
             </form>
@@ -116,8 +124,8 @@
             
             <form id="forgot-password-email-form">
                 <div class="form-group">
-                    <input type="email" id="forgot-password-email" placeholder="Email address" required>
                     <i class="fas fa-envelope"></i>
+                    <input type="email" id="forgot-password-email" placeholder="Email address" required>
                 </div>
                 <button type="submit" class="auth-submit-btn">Send Reset Link</button>
             </form>
@@ -131,19 +139,59 @@
 
 <!-- WELCOME SCREEN -->
 <div id="welcome-screen" class="welcome-screen" style="display: none;">
-    <div class="welcome-card">
-        <div class="brand">
-            <h1>Tripod</h1>
+    <div class="welcome-container">
+        <div class="welcome-header">
+            <div class="brand">
+                <i class="fas fa-robot"></i>
+                <h1>Tripod</h1>
+            </div>
             <p class="subtitle">Your single chat, their combined brilliance</p>
         </div>
-        <div class="input-group">
-            <textarea id="first-prompt" placeholder="Ask your first question..."></textarea>
-            <button id="start-btn" class="animated-btn">
-                <span class="animated-btn-text">AskLurk</span>
-                <div class="wave"></div>
-            </button>
+        
+        <div class="welcome-content">
+            <div class="ai-showcase">
+                <div class="ai-model-card">
+                    <div class="ai-icon gpt5">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <h3>GPT-5</h3>
+                    <p>Systematic reasoning and comprehensive analysis</p>
+                </div>
+                <div class="ai-model-card">
+                    <div class="ai-icon grok4">
+                        <i class="fas fa-lightbulb"></i>
+                    </div>
+                    <h3>Grok 4</h3>
+                    <p>Creative thinking and innovative solutions</p>
+                </div>
+                <div class="ai-model-card">
+                    <div class="ai-icon deepseek">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3>Deepseek V3.1</h3>
+                    <p>Deep pattern recognition and analysis</p>
+                </div>
+            </div>
+            
+            <div class="input-section">
+                <div class="input-group">
+                    <textarea id="first-prompt" placeholder="Ask your first question..."></textarea>
+                    <button id="start-btn" class="animated-btn">
+                        <span class="animated-btn-text">AskLurk</span>
+                        <div class="wave"></div>
+                    </button>
+                </div>
+                <p class="input-hint">Press Enter to send, Shift+Enter for new line</p>
+            </div>
         </div>
+        
         <div class="user-menu">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <span id="user-name">User</span>
+            </div>
             <button id="logout-btn" class="logout-btn">
                 <i class="fas fa-sign-out-alt"></i> Logout
             </button>
@@ -161,14 +209,18 @@
     <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <h2><i class="fas fa-history"></i>&nbsp;&nbsp;&nbsp;History</h2>
+            <div class="brand-mini">
+                <i class="fas fa-robot"></i>
+                <h2>Tripod</h2>
+            </div>
             <div class="search-box">
-                <input type="text" id="history-search" placeholder="Search history..." />
                 <i class="fas fa-search"></i>
+                <input type="text" id="history-search" placeholder="Search history..." />
             </div>
             <div class="sidebar-actions">
-                <button id="new-chat-btn" class="btn-new-chat icon" title="Start New Chat">
+                <button id="new-chat-btn" class="btn-new-chat" title="Start New Chat">
                     <i class="fas fa-plus"></i>
+                    <span>New Chat</span>
                 </button>
                 <div class="token-counter" id="token-counter">0 / 300k</div>
                 <button id="fullscreen-btn" class="btn-fullscreen" title="Toggle Fullscreen">
@@ -179,14 +231,36 @@
                 </button>
             </div>
         </div>
-        <div id="history-list" class="history-list"></div>
+        <div class="history-section">
+            <h3><i class="fas fa-history"></i> Recent Conversations</h3>
+            <div id="history-list" class="history-list"></div>
+        </div>
     </div>
 
     <!-- Main Chat Area -->
     <div class="main-area" id="main-area">
         <div class="chat-header">
-            <h2>Tripod</h2>
+            <div class="chat-title">
+                <h2>Tripod</h2>
+                <div class="ai-indicators">
+                    <div class="ai-indicator gpt5-indicator">
+                        <i class="fas fa-brain"></i>
+                        <span>GPT-5</span>
+                    </div>
+                    <div class="ai-indicator grok4-indicator">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>Grok 4</span>
+                    </div>
+                    <div class="ai-indicator deepseek-indicator">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Deepseek</span>
+                    </div>
+                </div>
+            </div>
             <div class="user-info">
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
                 <span id="user-greeting">Welcome!</span>
                 <button id="chat-logout-btn" class="logout-btn">
                     <i class="fas fa-sign-out-alt"></i> Logout
@@ -194,7 +268,20 @@
             </div>
         </div>
         
-        <div class="chat-container" id="chat-container"></div>
+        <div class="chat-container" id="chat-container">
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <h3>Welcome to Tripod</h3>
+                <p>Ask a question to get responses from three AI models simultaneously</p>
+                <div class="ai-tags">
+                    <span class="ai-tag gpt5-tag">GPT-5</span>
+                    <span class="ai-tag grok4-tag">Grok 4</span>
+                    <span class="ai-tag deepseek-tag">Deepseek</span>
+                </div>
+            </div>
+        </div>
 
         <!-- FILE CHIPS BAR -->
         <div id="file-chips" class="file-chips"></div>
@@ -205,7 +292,12 @@
                 <i class="fas fa-paperclip"></i>
             </button>
 
-            <textarea id="prompt-input" placeholder="Type your next thought..." maxlength="1000"></textarea>
+            <div class="input-wrapper">
+                <textarea id="prompt-input" placeholder="Type your next thought..." maxlength="1000"></textarea>
+                <div class="input-actions">
+                    <span class="char-counter">0/1000</span>
+                </div>
+            </div>
             <button id="ask-btn" class="btn-send">
                 <i class="fas fa-paper-plane"></i>
             </button>
@@ -263,6 +355,8 @@ const attachBtn = document.getElementById('attach-btn');
 const fileChips = document.getElementById('file-chips');
 const tokenCounter = document.getElementById('token-counter');
 const userGreeting = document.getElementById('user-greeting');
+const userName = document.getElementById('user-name');
+const charCounter = document.querySelector('.char-counter');
 
 let tokensUsed = 0;
 
@@ -531,6 +625,7 @@ function handleLogin(user) {
     currentUser = user;
     showScreen('welcome');
     userGreeting.textContent = `Welcome, ${user.displayName || user.email}!`;
+    userName.textContent = user.displayName || user.email.split('@')[0];
     showNotification('Login successful!', 'success');
 }
 
@@ -556,6 +651,22 @@ function formatTokens(n){
 function updateTokenCounter(){
     tokenCounter.textContent = `${formatTokens(tokensUsed)} / 300k`;
 }
+
+// Character Counter
+function updateCharCounter() {
+    const length = promptInput.value.length;
+    charCounter.textContent = `${length}/1000`;
+    
+    if (length > 900) {
+        charCounter.style.color = '#ff6b6b';
+    } else if (length > 750) {
+        charCounter.style.color = '#ffa726';
+    } else {
+        charCounter.style.color = 'var(--text-secondary)';
+    }
+}
+
+promptInput.addEventListener('input', updateCharCounter);
 
 // Sidebar Toggle
 function toggleSidebar(){
@@ -631,7 +742,13 @@ document.getElementById('history-search').addEventListener('input', filterHistor
 function addToHistory(prompt){
     const item = document.createElement('div');
     item.className = 'history-item';
-    item.innerHTML = `<i class="fas fa-message"></i><span>${escapeHtml(prompt.length>40?prompt.substring(0,40)+'…':prompt)}</span>`;
+    item.innerHTML = `
+        <i class="fas fa-message"></i>
+        <div class="history-content">
+            <span class="history-title">${escapeHtml(prompt.length>40?prompt.substring(0,40)+'…':prompt)}</span>
+            <span class="history-time">Just now</span>
+        </div>
+    `;
     item.title = prompt;
     item.addEventListener('click', ()=>{ promptInput.value = prompt; promptInput.focus(); });
     historyList.prepend(item);
@@ -641,7 +758,15 @@ function addToHistory(prompt){
 function appendUserMessage(text){
     const msg = document.createElement('div');
     msg.className = 'message user-message';
-    msg.innerHTML = `<div class="avatar">👤</div><div class="bubble">${escapeHtml(text)}</div>`;
+    msg.innerHTML = `
+        <div class="message-avatar">
+            <i class="fas fa-user"></i>
+        </div>
+        <div class="message-content">
+            <div class="bubble">${escapeHtml(text)}</div>
+            <div class="message-time">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+        </div>
+    `;
     chatContainer.appendChild(msg);
 }
 
@@ -652,7 +777,13 @@ function createResponseGroup(){
         <div class="ai-pair">
             <div class="ai-card gpt5-card">
                 <div class="card-header">
-                    <div class="badge gpt5-badge">GPT-5</div>
+                    <div class="ai-avatar gpt5-avatar">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <div class="card-title">
+                        <h3>GPT-5</h3>
+                        <p>Systematic Reasoning</p>
+                    </div>
                 </div>
                 <div class="thinking-container gpt5-thinking">
                     <div class="thinking-dots"><span></span><span></span><span></span></div>
@@ -662,7 +793,13 @@ function createResponseGroup(){
             </div>
             <div class="ai-card grok4-card">
                 <div class="card-header">
-                    <div class="badge grok4-badge">Grok 4</div>
+                    <div class="ai-avatar grok4-avatar">
+                        <i class="fas fa-lightbulb"></i>
+                    </div>
+                    <div class="card-title">
+                        <h3>Grok 4</h3>
+                        <p>Creative Thinking</p>
+                    </div>
                 </div>
                 <div class="thinking-container grok4-thinking">
                     <div class="thinking-dots"><span></span><span></span><span></span></div>
@@ -672,7 +809,13 @@ function createResponseGroup(){
             </div>
             <div class="ai-card deepseek-card">
                 <div class="card-header">
-                    <div class="badge deepseek-badge">Deepseek V3.1</div>
+                    <div class="ai-avatar deepseek-avatar">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="card-title">
+                        <h3>Deepseek V3.1</h3>
+                        <p>Deep Analysis</p>
+                    </div>
                 </div>
                 <div class="thinking-container deepseek-thinking">
                     <div class="thinking-dots"><span></span><span></span><span></span></div>
@@ -728,8 +871,8 @@ function showAskLurkButton(responseGroup) {
     const asklurkRow = document.createElement('div');
     asklurkRow.className = 'asklurk-row';
     asklurkRow.innerHTML = `
-        <button class="asklurk-btn shadow__btn">
-            <i class="fas fa-star"></i> AskLurk - Combine All Answers
+        <button class="asklurk-btn">
+            <i class="fas fa-crown"></i> AskLurk - Combine All Answers
         </button>
     `;
     
@@ -759,8 +902,12 @@ function runAskLurkMerge(responseGroup, btn) {
         asklurkCard.className = 'ai-card asklurk-card';
         asklurkCard.innerHTML = `
             <div class="card-header">
-                <div class="badge asklurk-badge">
-                    <i class="fas fa-crown"></i> AskLurk Combined Result
+                <div class="ai-avatar asklurk-avatar">
+                    <i class="fas fa-crown"></i>
+                </div>
+                <div class="card-title">
+                    <h3>AskLurk Combined Result</h3>
+                    <p>Synthesized Intelligence</p>
                 </div>
             </div>
             <div class="response-display asklurk-response">
@@ -946,6 +1093,10 @@ async function startChat(prompt){
         setTimeout(()=>chatApp.style.opacity='1',50); 
     },300);
     
+    // Remove empty state
+    const emptyState = document.querySelector('.empty-state');
+    if (emptyState) emptyState.remove();
+    
     addToHistory(prompt);
     appendUserMessage(prompt + (selectedFiles.length ? ` (+${selectedFiles.length} file${selectedFiles.length>1?'s':''})` : ''));
     
@@ -962,6 +1113,10 @@ async function startChat(prompt){
 async function handleAsk(prompt){
     if (!prompt?.trim() && !selectedFiles.length) return;
     
+    // Remove empty state
+    const emptyState = document.querySelector('.empty-state');
+    if (emptyState) emptyState.remove();
+    
     addToHistory(prompt);
     appendUserMessage(prompt + (selectedFiles.length ? ` (+${selectedFiles.length} file${selectedFiles.length>1?'s':''})` : ''));
     
@@ -970,11 +1125,25 @@ async function handleAsk(prompt){
     smoothScrollToBottom();
     
     promptInput.value = '';
+    updateCharCounter();
     await streamResponses(prompt, group);
 }
 
 function startNewChat(){
-    chatContainer.innerHTML = '';
+    chatContainer.innerHTML = `
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i class="fas fa-robot"></i>
+            </div>
+            <h3>Welcome to Tripod</h3>
+            <p>Ask a question to get responses from three AI models simultaneously</p>
+            <div class="ai-tags">
+                <span class="ai-tag gpt5-tag">GPT-5</span>
+                <span class="ai-tag grok4-tag">Grok 4</span>
+                <span class="ai-tag deepseek-tag">Deepseek</span>
+            </div>
+        </div>
+    `;
     selectedFiles = [];
     renderFileChips();
     window.scrollTo(0,0);
@@ -1028,7 +1197,7 @@ auth.onAuthStateChanged((user) => {
 setupOTPInputs();
 showScreen('auth');
 updateTokenCounter();
+updateCharCounter();
 </script>
 </body>
 </html>
-
