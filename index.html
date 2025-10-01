@@ -3,16 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tripod - AI Chat Experience</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Tripod – AI Chat Experience</title>
+
+    <!-- External icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    
-    <!-- Firebase SDK -->
+
+    <!-- Your separate stylesheet -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
 </head>
 <body>
-    <!-- Theme Toggle -->
+    <!-- 1. GLOBAL THEME TOGGLE -->
     <div class="theme-toggle-wrapper">
         <button id="global-theme-toggle" class="theme-toggle-btn" title="Toggle Theme">
             <i class="fas fa-moon"></i>
@@ -20,14 +24,12 @@
         </button>
     </div>
 
-    <!-- LOGIN/SIGNUP MODAL -->
-    <div id="auth-modal" class="auth-modal" style="display: flex;">
+    <!-- 2. AUTHENTICATION MODAL -->
+    <div id="auth-modal" class="auth-modal">
         <div class="auth-container">
             <div class="auth-header">
                 <div class="brand-logo">
-                    <div class="logo-icon">
-                        <i class="fas fa-robot"></i>
-                    </div>
+                    <div class="logo-icon"><i class="fas fa-robot"></i></div>
                     <h1>Tripod</h1>
                 </div>
                 <p class="tagline">Your single chat, their combined brilliance</p>
@@ -38,19 +40,16 @@
                 <button class="auth-tab" data-tab="signup">Sign Up</button>
             </div>
 
-            <!-- LOGIN FORM -->
+            <!-- LOGIN -->
             <div id="login-form" class="auth-form active">
                 <h2>Welcome Back</h2>
                 <p class="auth-subtitle">Sign in to your account</p>
-                
+
                 <button class="google-auth-btn" id="google-login-btn">
-                    <i class="fab fa-google"></i>
-                    Continue with Google
+                    <i class="fab fa-google"></i> Continue with Google
                 </button>
-                
-                <div class="divider">
-                    <span>or</span>
-                </div>
+
+                <div class="divider"><span>or</span></div>
 
                 <form id="login-email-form">
                     <div class="form-group">
@@ -69,19 +68,16 @@
                 </div>
             </div>
 
-            <!-- SIGNUP FORM -->
+            <!-- SIGNUP -->
             <div id="signup-form" class="auth-form">
                 <h2>Create Account</h2>
                 <p class="auth-subtitle">Join Tripod today</p>
-                
+
                 <button class="google-auth-btn" id="google-signup-btn">
-                    <i class="fab fa-google"></i>
-                    Continue with Google
+                    <i class="fab fa-google"></i> Continue with Google
                 </button>
-                
-                <div class="divider">
-                    <span>or</span>
-                </div>
+
+                <div class="divider"><span>or</span></div>
 
                 <form id="signup-email-form">
                     <div class="form-group">
@@ -100,23 +96,21 @@
                 </form>
             </div>
 
-            <!-- OTP VERIFICATION FORM -->
+            <!-- OTP -->
             <div id="otp-form" class="auth-form">
                 <h2>Verify Your Email</h2>
                 <p class="auth-subtitle">We sent a 6-digit code to <span id="otp-email"></span></p>
-                
+
                 <form id="otp-verification-form">
                     <div class="otp-container">
-                        <input type="text" class="otp-input" maxlength="1" required>
-                        <input type="text" class="otp-input" maxlength="1" required>
-                        <input type="text" class="otp-input" maxlength="1" required>
-                        <input type="text" class="otp-input" maxlength="1" required>
-                        <input type="text" class="otp-input" maxlength="1" required>
-                        <input type="text" class="otp-input" maxlength="1" required>
+                        <input class="otp-input" type="text" maxlength="1" required>
+                        <input class="otp-input" type="text" maxlength="1" required>
+                        <input class="otp-input" type="text" maxlength="1" required>
+                        <input class="otp-input" type="text" maxlength="1" required>
+                        <input class="otp-input" type="text" maxlength="1" required>
+                        <input class="otp-input" type="text" maxlength="1" required>
                     </div>
-                    <div class="otp-timer">
-                        <span id="otp-timer">02:00</span>
-                    </div>
+                    <div class="otp-timer"><span id="otp-timer">02:00</span></div>
                     <button type="submit" class="auth-submit-btn">Verify & Create Account</button>
                 </form>
 
@@ -126,11 +120,10 @@
                 </div>
             </div>
 
-            <!-- FORGOT PASSWORD FORM -->
+            <!-- FORGOT PASSWORD -->
             <div id="forgot-password-form" class="auth-form">
                 <h2>Reset Password</h2>
                 <p class="auth-subtitle">Enter your email to reset your password</p>
-                
                 <form id="forgot-password-email-form">
                     <div class="form-group">
                         <i class="fas fa-envelope"></i>
@@ -138,7 +131,6 @@
                     </div>
                     <button type="submit" class="auth-submit-btn">Send Reset Link</button>
                 </form>
-
                 <div class="auth-links">
                     <a href="#" id="back-to-login">Back to Login</a>
                 </div>
@@ -146,44 +138,36 @@
         </div>
     </div>
 
-    <!-- WELCOME SCREEN -->
-    <div id="welcome-screen" class="welcome-screen" style="display: none;">
+    <!-- 3. WELCOME SCREEN -->
+    <div id="welcome-screen" class="welcome-screen">
         <div class="welcome-container">
             <div class="welcome-header">
                 <div class="brand">
-                    <div class="logo-animation">
-                        <i class="fas fa-robot"></i>
-                    </div>
+                    <div class="logo-animation"><i class="fas fa-robot"></i></div>
                     <h1>Tripod</h1>
                 </div>
                 <p class="subtitle">Your single chat, their combined brilliance</p>
             </div>
-            
+
             <div class="welcome-content">
                 <div class="ai-showcase">
                     <div class="ai-model-card">
-                        <div class="ai-icon gpt5">
-                            <i class="fas fa-brain"></i>
-                        </div>
+                        <div class="ai-icon gpt5"><i class="fas fa-brain"></i></div>
                         <h3>GPT-5</h3>
                         <p>Systematic reasoning and comprehensive analysis</p>
                     </div>
                     <div class="ai-model-card">
-                        <div class="ai-icon grok4">
-                            <i class="fas fa-lightbulb"></i>
-                        </div>
+                        <div class="ai-icon grok4"><i class="fas fa-lightbulb"></i></div>
                         <h3>Grok 4</h3>
                         <p>Creative thinking and innovative solutions</p>
                     </div>
                     <div class="ai-model-card">
-                        <div class="ai-icon deepseek">
-                            <i class="fas fa-chart-line"></i>
-                        </div>
+                        <div class="ai-icon deepseek"><i class="fas fa-chart-line"></i></div>
                         <h3>Deepseek V3.1</h3>
                         <p>Deep pattern recognition and analysis</p>
                     </div>
                 </div>
-                
+
                 <div class="input-section">
                     <div class="input-group">
                         <textarea id="first-prompt" placeholder="Ask your first question..."></textarea>
@@ -195,12 +179,10 @@
                     <p class="input-hint">Press Enter to send, Shift+Enter for new line</p>
                 </div>
             </div>
-            
+
             <div class="user-menu">
                 <div class="user-info">
-                    <div class="user-avatar">
-                        <i class="fas fa-user"></i>
-                    </div>
+                    <div class="user-avatar"><i class="fas fa-user"></i></div>
                     <span id="user-name">User</span>
                 </div>
                 <button id="logout-btn" class="logout-btn">
@@ -210,9 +192,9 @@
         </div>
     </div>
 
-    <!-- MAIN CHAT APP -->
-    <div id="chat-app" class="chat-app" style="display: none;">
-        <!-- CREATIVE FLOATING TOGGLE -->
+    <!-- 4. MAIN CHAT APP -->
+    <div id="chat-app" class="chat-app">
+        <!-- Creative floating sidebar toggle -->
         <button id="floating-toggle-btn" class="creative-float-btn" title="Toggle Sidebar">
             <i class="fas fa-bars"></i>
         </button>
@@ -221,19 +203,16 @@
         <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <div class="brand-mini">
-                    <div class="logo-icon">
-                        <i class="fas fa-robot"></i>
-                    </div>
+                    <div class="logo-icon"><i class="fas fa-robot"></i></div>
                     <h2>Tripod</h2>
                 </div>
                 <div class="search-box">
                     <i class="fas fa-search"></i>
-                    <input type="text" id="history-search" placeholder="Search history..." />
+                    <input type="text" id="history-search" placeholder="Search history...">
                 </div>
                 <div class="sidebar-actions">
                     <button id="new-chat-btn" class="btn-new-chat" title="Start New Chat">
-                        <i class="fas fa-plus"></i>
-                        <span>New Chat</span>
+                        <i class="fas fa-plus"></i><span>New Chat</span>
                     </button>
                     <div class="token-counter" id="token-counter">0 / 300k</div>
                     <button id="fullscreen-btn" class="btn-fullscreen" title="Toggle Fullscreen">
@@ -247,42 +226,27 @@
             </div>
         </div>
 
-        <!-- Main Chat Area -->
+        <!-- Main Area -->
         <div class="main-area" id="main-area">
             <div class="chat-header">
                 <div class="chat-title">
                     <h2>Tripod</h2>
                     <div class="ai-indicators">
-                        <div class="ai-indicator gpt5-indicator">
-                            <i class="fas fa-brain"></i>
-                            <span>GPT-5</span>
-                        </div>
-                        <div class="ai-indicator grok4-indicator">
-                            <i class="fas fa-lightbulb"></i>
-                            <span>Grok 4</span>
-                        </div>
-                        <div class="ai-indicator deepseek-indicator">
-                            <i class="fas fa-chart-line"></i>
-                            <span>Deepseek</span>
-                        </div>
+                        <div class="ai-indicator gpt5-indicator"><i class="fas fa-brain"></i><span>GPT-5</span></div>
+                        <div class="ai-indicator grok4-indicator"><i class="fas fa-lightbulb"></i><span>Grok 4</span></div>
+                        <div class="ai-indicator deepseek-indicator"><i class="fas fa-chart-line"></i><span>Deepseek</span></div>
                     </div>
                 </div>
                 <div class="user-info">
-                    <div class="user-avatar">
-                        <i class="fas fa-user"></i>
-                    </div>
+                    <div class="user-avatar"><i class="fas fa-user"></i></div>
                     <span id="user-greeting">Welcome!</span>
-                    <button id="chat-logout-btn" class="logout-btn">
-                        <i class="fas fa-sign-out-alt"></i> Logout
-                    </button>
+                    <button id="chat-logout-btn" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
                 </div>
             </div>
-            
+
             <div class="chat-container" id="chat-container">
                 <div class="empty-state">
-                    <div class="empty-icon">
-                        <i class="fas fa-robot"></i>
-                    </div>
+                    <div class="empty-icon"><i class="fas fa-robot"></i></div>
                     <h3>Welcome to Tripod</h3>
                     <p>Ask a question to get responses from three AI models simultaneously</p>
                     <div class="ai-tags">
@@ -293,28 +257,23 @@
                 </div>
             </div>
 
-            <!-- FILE CHIPS BAR -->
+            <!-- File chips bar -->
             <div id="file-chips" class="file-chips"></div>
 
+            <!-- Input Bar -->
             <div class="input-bar">
                 <input type="file" id="file-input" multiple accept="image/*,.pdf,.txt,.doc,.docx" style="display:none;">
-                <button id="attach-btn" class="attach-btn" title="Add file or picture">
-                    <i class="fas fa-paperclip"></i>
-                </button>
-
+                <button id="attach-btn" class="attach-btn" title="Add file or picture"><i class="fas fa-paperclip"></i></button>
                 <div class="input-wrapper">
                     <textarea id="prompt-input" placeholder="Type your next thought..." maxlength="1000"></textarea>
-                    <div class="input-actions">
-                        <span class="char-counter">0/1000</span>
-                    </div>
+                    <div class="input-actions"><span class="char-counter">0/1000</span></div>
                 </div>
-                <button id="ask-btn" class="btn-send">
-                    <i class="fas fa-paper-plane"></i>
-                </button>
+                <button id="ask-btn" class="btn-send"><i class="fas fa-paper-plane"></i></button>
             </div>
         </div>
     </div>
 
+    <!-- ========== JAVASCRIPT ========== -->
     <script src="script.js"></script>
 </body>
 </html>
